@@ -1,0 +1,10 @@
+*.un~
+*.a
+*.o
+*.d
+*.out
+*.exe
+*.dot
+*.png
+*.txt
+*.stackdump
