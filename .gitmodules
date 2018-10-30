@@ -1,0 +1,3 @@
+[submodule "min-bnf-parser"]
+	path = min-bnf-parser
+	url = git@github.com:kaitou-ryaku/min-bnf-parser.git
