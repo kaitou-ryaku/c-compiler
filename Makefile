@@ -8,7 +8,7 @@ TARGET  := compiler.out
 
 ALL_CH  := $(wildcard src/*.c include/*.h)
 ALL_O   := $(patsubst src/%.c,object/%.o,$(wildcard src/*.c))
-ALL_BNF := $(wildcard bnf/*)
+ALL_BNF := $(wildcard bnf/*.bnf bnf/*.txt)
 ALL_CH_WITHOUT_MAIN := $(filter-out src/main.c,$(ALL_CH))
 ALL_O_WITHOUT_MAIN  := $(filter-out object/main.o,$(ALL_O))
 
@@ -29,7 +29,7 @@ $(PARSER): $(ALL_PARSER_CH)
 $(REGEX):  $(ALL_REGEX_CH)
 	cd min-bnf-parser/min-regex && $(MAKE) $(patsubst min-bnf-parser/min-regex/%.a,%.a,$@) "CC=$(CC)" "CFLAGS=$(CFLAGS)"
 
-$(TARGET): $(ARCHIVE) $(PARSER) $(REGEX) src/main.c
+$(TARGET): $(ARCHIVE) $(PARSER) $(REGEX) $(ALL_BNF) src/main.c
 	cd object && $(MAKE) main.o "CC=$(CC)" "CFLAGS=$(CFLAGS)"
 	$(CC) $(CFLAGS) object/main.o $(ARCHIVE) $(PARSER) $(REGEX) -o $@
 
