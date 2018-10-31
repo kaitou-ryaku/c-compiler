@@ -146,7 +146,6 @@ static void delete_solitary_container(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
   while (is_del) is_del = delete_solitary_container_recursive(0, pt, bnf);
 }/*}}}*/
 static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
-  fprintf(stderr, "hoge%d\n", pt[0].used_size);
   for (int i=0; i<pt[0].used_size; i++) {
     if ( is_pt_name("lbrace"    , pt[i], bnf)
       || is_pt_name("lbracket"  , pt[i], bnf)
