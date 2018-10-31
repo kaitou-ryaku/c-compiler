@@ -7,9 +7,12 @@ static bool is_pt_name(const char* name, const PARSE_TREE pt, const BNF* bnf);
 static bool delete_lift_solitary_pt(const int index, PARSE_TREE* pt);
 static bool delete_solitary_container_recursive(const int top, PARSE_TREE* pt, const BNF* bnf);
 static void delete_solitary_container(PARSE_TREE* pt, const BNF* bnf);
+static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf);
+static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf);
 /*}}}*/
 
 extern void translate_pt_to_ast(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
+  delete_syntax_symbol(pt, bnf);
   delete_solitary_container(pt, bnf);
 }/*}}}*/
 static bool is_pt_name(const char* name, const PARSE_TREE pt, const BNF* bnf) {/*{{{*/
@@ -136,4 +139,18 @@ static bool delete_solitary_container_recursive(const int top, PARSE_TREE* pt, c
 static void delete_solitary_container(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
   bool is_del = true;
   while (is_del) is_del = delete_solitary_container_recursive(0, pt, bnf);
+}/*}}}*/
+static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
+  fprintf(stderr, "hoge%d\n", pt[0].used_size);
+  for (int i=0; i<pt[0].used_size; i++) {
+    if ( is_pt_name("lbrace"    , pt[i], bnf)
+      || is_pt_name("lbracket"  , pt[i], bnf)
+      || is_pt_name("lparen"    , pt[i], bnf)
+      || is_pt_name("rbrace"    , pt[i], bnf)
+      || is_pt_name("rbracket"  , pt[i], bnf)
+      || is_pt_name("rparen"    , pt[i], bnf)
+      || is_pt_name("semicolon" , pt[i], bnf)
+      || is_pt_name("comma"     , pt[i], bnf)
+    ) delete_lift_solitary_pt(i, pt);
+  }
 }/*}}}*/
