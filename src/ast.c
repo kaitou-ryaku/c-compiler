@@ -1,6 +1,7 @@
 #include "../min-bnf-parser/include/min-bnf-parser.h"
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 // 関数プロトタイプ/*{{{*/
 static bool is_pt_name(const char* name, const PARSE_TREE pt, const BNF* bnf);
@@ -9,11 +10,14 @@ static bool delete_solitary_container_recursive(const int top, PARSE_TREE* pt, c
 static void delete_solitary_container(PARSE_TREE* pt, const BNF* bnf);
 static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf);
 static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf);
+static bool two_operatir_to_binary_tree_recursive(const int top, PARSE_TREE* pt, const BNF* bnf);
+static void two_operatir_to_binary_tree(PARSE_TREE* pt, const BNF* bnf);
 /*}}}*/
 
 extern void translate_pt_to_ast(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
   delete_syntax_symbol(pt, bnf);
   delete_solitary_container(pt, bnf);
+  two_operatir_to_binary_tree(pt, bnf);
 }/*}}}*/
 static bool is_pt_name(const char* name, const PARSE_TREE pt, const BNF* bnf) {/*{{{*/
   bool ret = false;
@@ -157,4 +161,69 @@ static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
       || is_pt_name("comma"     , pt[i], bnf)
     ) delete_lift_solitary_pt(i, pt);
   }
+}/*}}}*/
+static bool two_operatir_to_binary_tree_recursive(const int top, PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
+  bool is_change = false;
+  if ( is_pt_name("LOGICAL_OR_EXPRESSION"      , pt[top], bnf)
+    || is_pt_name("LOGICAL_AND_EXPRESSION"     , pt[top], bnf)
+    || is_pt_name("INCLUSIVE_OR_EXPRESSION"    , pt[top], bnf)
+    || is_pt_name("EXCLUSIVE_OR_EXPRESSION"    , pt[top], bnf)
+    || is_pt_name("AND_EXPRESSION"             , pt[top], bnf)
+    || is_pt_name("EQUALITY_EXPRESSION"        , pt[top], bnf)
+    || is_pt_name("RELATIONAL_EXPRESSION"      , pt[top], bnf)
+    || is_pt_name("SHIFT_EXPRESSION"           , pt[top], bnf)
+    || is_pt_name("ADDITIVE_EXPRESSION"        , pt[top], bnf)
+    || is_pt_name("MULTIPLICATIVE_EXPRESSION"  , pt[top], bnf)
+    || is_pt_name("CAST_EXPRESSION"            , pt[top], bnf)
+    || is_pt_name("ASSIGNMENT_EXPRESSION"      , pt[top], bnf)
+  ) {
+    if ( (pt[top].down >= 0)
+      && (pt[pt[top].down].right >= 0)
+      && (pt[pt[pt[top].down].right].right >= 0)
+    ) {
+      is_change = true;
+      const int fst = pt[top].down;
+      const int ope = pt[fst].right;
+      const int snd = pt[ope].right;
+
+      assert(is_lex(bnf[pt[ope].bnf_id]));
+
+      pt[top].down = ope;
+      pt[ope].up   = top;
+      pt[ope].left  = pt[fst].left; assert(pt[ope].left < 0);
+      pt[ope].right = pt[snd].right;
+      pt[ope].down  = fst;
+
+      pt[fst].left  = -1;
+      pt[fst].right = snd;
+      pt[fst].up    = ope;
+
+      pt[snd].left  = fst;
+      pt[snd].right = -1;
+      pt[snd].up    = ope;
+
+      two_operatir_to_binary_tree_recursive(fst, pt, bnf);
+      two_operatir_to_binary_tree_recursive(snd, pt, bnf);
+    }
+
+    else if (pt[top].down >= 0) {
+      assert(pt[pt[top].down].right < 0);
+      is_change = delete_lift_solitary_pt(top, pt);
+      two_operatir_to_binary_tree_recursive(pt[top].down, pt, bnf);
+    }
+
+    else if (pt[top].down < 0) {
+      is_change = delete_lift_solitary_pt(top, pt);
+    } else {
+      assert(0);
+    }
+  }
+
+  if (!is_change && (pt[top].down  >= 0)) is_change = two_operatir_to_binary_tree_recursive(pt[top].down, pt, bnf);
+  if (!is_change && (pt[top].right >= 0)) is_change = two_operatir_to_binary_tree_recursive(pt[top].right, pt, bnf);
+  return is_change;
+}/*}}}*/
+static void two_operatir_to_binary_tree(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
+  bool is_change = true;
+  while (is_change) is_change = two_operatir_to_binary_tree_recursive(0, pt, bnf);
 }/*}}}*/
