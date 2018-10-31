@@ -137,7 +137,3 @@ static void delete_solitary_container(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
   bool is_del = true;
   while (is_del) is_del = delete_solitary_container_recursive(0, pt, bnf);
 }/*}}}*/
-
-
-
-
