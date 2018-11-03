@@ -23,6 +23,7 @@ static void create_symbol_function_recursive(const BLOCK* block, const LEX_TOKEN
 /*}}}*/
 extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
   initialize_symbol_table(symbol, symbol_max_size);
+  create_symbol_function_recursive(block, token, bnf, pt, symbol);
   create_symbol_variable_recursive(0, block, token, bnf, pt, symbol);
 
   return 0;
@@ -151,8 +152,6 @@ static void create_symbol_variable_recursive(/*{{{*/
     ;
   }
   else if (is_pt_name("DECLARATION", pt[pt_top_index], bnf)) {
-    print_parse_tree_unit(stderr, pt_top_index, pt, bnf, token);
-    fprintf(stderr, "\n ");
     const int declaration = pt_top_index;
     const int up = pt[declaration].up;
     assert(pt[declaration].down >= 0);
@@ -171,16 +170,16 @@ static void create_symbol_variable_recursive(/*{{{*/
 
     // 関数定義ブロック内の変数宣言
     if (is_pt_name("COMPOUND_STATEMENT", pt[up], bnf)) {
-      fprintf(stderr, "COMPOUND_STATEMENT ");
       print_parse_tree_unit(stderr, identifier, pt, bnf, token);
-      fprintf(stderr, "\n ");
+      fprintf(stderr, " COMPOUND_STATEMENT ");
+      fprintf(stderr, "\n");
     }
 
     // 関数の引数
     else if (is_pt_name("FUNCTION_DEFINITION", pt[up], bnf)) {
-      fprintf(stderr, "FUNCTION_DEFINITION ");
       print_parse_tree_unit(stderr, identifier, pt, bnf, token);
-      fprintf(stderr, "\n ");
+      fprintf(stderr, " FUNCTION_DEFINITION ");
+      fprintf(stderr, "\n");
     }
 
     // 関数プロトタイプ宣言、グローバル変数のいずれか
@@ -189,16 +188,16 @@ static void create_symbol_variable_recursive(/*{{{*/
       const int rparen = search_pt_index_right("rparen", identifier, pt, bnf);
       // 関数プロトタイプ宣言
       if (rparen >= 0) {
-        fprintf(stderr, "PROTOTYPE ");
         print_parse_tree_unit(stderr, identifier, pt, bnf, token);
-        fprintf(stderr, "\n ");
+        fprintf(stderr, " PROTOTYPE ");
+        fprintf(stderr, "\n");
       }
 
       // グローバル変数
       else {
-        fprintf(stderr, "GLOBAL_VARIABLE ");
         print_parse_tree_unit(stderr, identifier, pt, bnf, token);
-        fprintf(stderr, "\n ");
+        fprintf(stderr, " GLOBAL_VARIABLE ");
+        fprintf(stderr, "\n");
       }
     }
 
@@ -223,11 +222,22 @@ static void create_symbol_function_recursive(/*{{{*/
 
   int external_declaration = pt[0].down;
   while (external_declaration >= 0) {
-    const int function_definition = pt[external_declaration].down;
-    assert(function_definition >= 0);
-    if (is_pt_name("FUNCTION_DEFINITION", pt[function_definition], bnf)) {
-      continue;
+    const int function_definition = search_pt_index_right("FUNCTION_DEFINITION", pt[external_declaration].down, pt, bnf);
+    if (function_definition >= 0) {
+      const int declarator = search_pt_index_right("DECLARATOR", pt[function_definition].down, pt, bnf);
+      assert(declarator >= 0);
+
+      const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
+      assert(direct_declarator >= 0);
+
+      const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
+      assert(identifier >= 0);
+
+      print_parse_tree_unit(stderr, identifier, pt, bnf, token);
+      fprintf(stderr, " FUNCTION_DEFINITION ");
+      fprintf(stderr, "\n ");
     }
+
     external_declaration = pt[external_declaration].right;
   }
 }/*}}}*/
