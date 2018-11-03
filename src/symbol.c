@@ -18,29 +18,31 @@ static int cretae_block_recursive(
  , const LEX_TOKEN* token
  );
 static int search_corresponding_rblock(const int begin, const int far_end, const LEX_TOKEN* token);
-static void create_symbol_recursive(const int pt_top_index, const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol);
+static void create_symbol_variable_recursive(const int pt_top_index, const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol);
+static void create_symbol_function_recursive(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol);
 /*}}}*/
 extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
   initialize_symbol_table(symbol, symbol_max_size);
-  create_symbol_recursive(0, block, token, bnf, pt, symbol);
+  create_symbol_variable_recursive(0, block, token, bnf, pt, symbol);
 
   return 0;
 }/*}}}*/
 static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
   for (int i=0; i<symbol_max_size; i++) {
-    symbol[i].id         = i;
-    symbol[i].total_size = symbol_max_size;
-    symbol[i].used_size  = 0;
-    symbol[i].lex_id     = -1;
-    symbol[i].name       = NULL;
-    symbol[i].kind       = -1;
-    symbol[i].type       = -1;
-    symbol[i].scope      = -1;
-    symbol[i].addr       = -1;
-    symbol[i].pointer    = -1;
-    symbol[i].size       = -1;
-    symbol[i].const_var  = false;
-    symbol[i].const_addr = false;
+    symbol[i].id           = i;
+    symbol[i].total_size   = symbol_max_size;
+    symbol[i].used_size    = 0;
+    symbol[i].token_id     = -1;
+    symbol[i].kind         = -1;
+    symbol[i].type         = -1;
+    symbol[i].block        = -1;
+    symbol[i].addr         = -1;
+    symbol[i].pointer      = -1;
+    symbol[i].size         = -1;
+    symbol[i].const_var    = false;
+    symbol[i].const_addr   = false;
+    symbol[i].arg_func_id  = -1;
+    symbol[i].func_arg_num = -1;
   }
 }/*}}}*/
 extern int create_block(BLOCK* block, const int block_max_size, const LEX_TOKEN* token) {/*{{{*/
@@ -136,7 +138,14 @@ extern void print_block(FILE* fp, const BLOCK* block, const LEX_TOKEN* token) {/
   }
   fprintf(fp, "\n");
 }/*}}}*/
-static void create_symbol_recursive(const int pt_top_index, const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol) {
+static void create_symbol_variable_recursive(/*{{{*/
+  const int pt_top_index
+  , const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
   // 変数をシンボルテーブルに登録
   if (pt_top_index < 0) {
     ;
@@ -146,22 +155,19 @@ static void create_symbol_recursive(const int pt_top_index, const BLOCK* block, 
     fprintf(stderr, "\n ");
     const int declaration = pt_top_index;
     const int up = pt[declaration].up;
-
     assert(pt[declaration].down >= 0);
-    const int semicolon = rightside_pt_index(pt[declaration].down, pt);
-    assert(is_pt_name("semicolon", pt[semicolon], bnf));
 
-    const int init_declarator = pt[semicolon].left;
+    const int init_declarator = search_pt_index_right("INIT_DECLARATOR", pt[declaration].down, pt, bnf);
     assert(init_declarator >= 0);
-    assert(is_pt_name("INIT_DECLARATOR", pt[init_declarator], bnf));
 
-    const int declarator = pt[init_declarator].down;
-    assert(is_pt_name("DECLARATOR", pt[declarator], bnf));
-    const int direct_declarator = rightside_pt_index(pt[declarator].down, pt);
-    assert(is_pt_name("DIRECT_DECLARATOR", pt[direct_declarator], bnf));
-    //const int identifier = rightside_pt_index(pt[direct_declarator].down, pt);
-    const int identifier = pt[direct_declarator].down;
-    assert(is_pt_name("identifier", pt[identifier], bnf));
+    const int declarator = search_pt_index_right("DECLARATOR", pt[init_declarator].down, pt, bnf);
+    assert(declarator >= 0);
+
+    const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
+    assert(direct_declarator >= 0);
+
+    const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
+    assert(identifier >= 0);
 
     // 関数定義ブロック内の変数宣言
     if (is_pt_name("COMPOUND_STATEMENT", pt[up], bnf)) {
@@ -179,10 +185,10 @@ static void create_symbol_recursive(const int pt_top_index, const BLOCK* block, 
 
     // 関数プロトタイプ宣言、グローバル変数のいずれか
     else if (is_pt_name("EXTERNAL_DECLARATION", pt[up], bnf)) {
-      const int check = rightside_pt_index(identifier, pt);
 
+      const int rparen = search_pt_index_right("rparen", identifier, pt, bnf);
       // 関数プロトタイプ宣言
-      if (is_pt_name("rparen", pt[check], bnf)) {
+      if (rparen >= 0) {
         fprintf(stderr, "PROTOTYPE ");
         print_parse_tree_unit(stderr, identifier, pt, bnf, token);
         fprintf(stderr, "\n ");
@@ -197,13 +203,31 @@ static void create_symbol_recursive(const int pt_top_index, const BLOCK* block, 
     }
 
     const int right = pt[pt_top_index].right;
-    if (right >= 0) create_symbol_recursive(right, block, token, bnf, pt, symbol);
+    if (right >= 0) create_symbol_variable_recursive(right, block, token, bnf, pt, symbol);
   }
 
   else {
     const int right = pt[pt_top_index].right;
-    if (right >= 0) create_symbol_recursive(right, block, token, bnf, pt, symbol);
+    if (right >= 0) create_symbol_variable_recursive(right, block, token, bnf, pt, symbol);
     const int down  = pt[pt_top_index].down;
-    if (down >= 0) create_symbol_recursive(down, block, token, bnf, pt, symbol);
+    if (down >= 0) create_symbol_variable_recursive(down, block, token, bnf, pt, symbol);
   }
-}
+}/*}}}*/
+static void create_symbol_function_recursive(/*{{{*/
+  const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+
+  int external_declaration = pt[0].down;
+  while (external_declaration >= 0) {
+    const int function_definition = pt[external_declaration].down;
+    assert(function_definition >= 0);
+    if (is_pt_name("FUNCTION_DEFINITION", pt[function_definition], bnf)) {
+      continue;
+    }
+    external_declaration = pt[external_declaration].right;
+  }
+}/*}}}*/
