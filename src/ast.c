@@ -1,10 +1,12 @@
 #include "../min-bnf-parser/include/min-bnf-parser.h"
+#include "../include/ast.h"
+#include "../include/common.h"
+#include "../include/pt_common.h"
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
 
 // 関数プロトタイプ/*{{{*/
-static bool is_pt_name(const char* name, const PARSE_TREE pt, const BNF* bnf);
 static bool delete_lift_solitary_pt(const int index, PARSE_TREE* pt);
 static bool delete_solitary_container_recursive(const int top, PARSE_TREE* pt, const BNF* bnf);
 static void delete_solitary_container(PARSE_TREE* pt, const BNF* bnf);
@@ -18,11 +20,6 @@ extern void translate_pt_to_ast(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
   delete_syntax_symbol(pt, bnf);
   delete_solitary_container(pt, bnf);
   two_operatir_to_binary_tree(pt, bnf);
-}/*}}}*/
-static bool is_pt_name(const char* name, const PARSE_TREE pt, const BNF* bnf) {/*{{{*/
-  bool ret = false;
-  if (0 == strcmp(name, bnf[pt.bnf_id].name)) ret = true;
-  return ret;
 }/*}}}*/
 static bool delete_lift_solitary_pt(const int index, PARSE_TREE* pt) {/*{{{*/
   // 削除したらtrue, 削除しなかったらfalseを返す
