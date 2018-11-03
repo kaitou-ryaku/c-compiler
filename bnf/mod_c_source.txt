@@ -9,4 +9,4 @@
 "}"
 "}"
 "int hoge(int p, int q);"
-"int gl;"
+"static volatile int ***** const g;"
