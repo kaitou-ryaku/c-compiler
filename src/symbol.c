@@ -53,6 +53,7 @@ static int register_declaration(
   , SYMBOL* symbol
 );
 static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol);
+static bool delete_pt_recursive(const int index, PARSE_TREE* pt);
 /*}}}*/
 extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
   initialize_symbol_table(symbol, symbol_max_size);
@@ -367,10 +368,43 @@ static int register_declaration(/*{{{*/
 
     pointer = pt[pt[pointer].down].right;
   }
-
   symbol[symbol_empty_id].pointer = pointer_depth;
 
-  // TODO equalの処理
+  // 初期化がある場合、declarationを初期化に置換
+  if (equal >= 0) {
+    assert(initializer >= 0);
+
+    if (pt[declaration].left >= 0) {
+      pt[pt[declaration].left].right = equal;
+      pt[equal].left = pt[declaration].left;
+    }
+    else {
+      pt[pt[declaration].up].down = equal;
+      pt[equal].left = -1;
+    }
+    pt[equal].up = pt[declaration].up;
+
+    if (pt[declaration].right >= 0) {
+      pt[pt[declaration].right].left = equal;
+      pt[equal].right = pt[declaration].right;
+    } else {
+      pt[equal].right = -1;
+    }
+    pt[equal].down = identifier;
+
+    pt[identifier].up = equal;
+    pt[identifier].left = -1;
+    pt[identifier].right = initializer;
+
+    pt[initializer].up = equal;
+    pt[initializer].left = identifier;
+    pt[initializer].right = -1;
+  }
+
+  // 初期化がない場合、単にdeclarationを削除
+  else {
+    delete_pt_recursive(declaration, pt);
+  }
 
   return symbol_empty_id+1;
 }/*}}}*/
@@ -416,4 +450,36 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   fprintf(fp, "size:%3d ", symbol[line].size);
   fprintf(fp, "arg_func_id:%3d ", symbol[line].arg_func_id);
   fprintf(fp, "func_arg_num:%3d", symbol[line].func_arg_num);
+}/*}}}*/
+static bool delete_pt_recursive(const int index, PARSE_TREE* pt) {/*{{{*/
+  bool ret;
+  const PARSE_TREE del = pt[index];
+
+  if (index < 0) {
+    ret = false;
+  }
+
+  else {
+    const int up    = pt[index].up;
+    const int left  = pt[index].left;
+    const int right = pt[index].right;
+
+    if (up >= 0) {
+      if      ((left < 0) && (right >= 0)) {
+        assert(pt[up].down == index);
+        pt[up].down = right;
+      }
+      else if ((left < 0) && (right <  0)) {
+        assert(pt[up].down == index);
+        pt[up].down = -1;
+      }
+    }
+
+    if (left  >= 0) pt[left].right = del.right;
+    if (right >= 0) pt[right].left = del.left;
+
+    ret = true;
+  }
+
+  return ret;
 }/*}}}*/

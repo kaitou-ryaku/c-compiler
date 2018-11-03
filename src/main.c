@@ -92,7 +92,7 @@ int main(void) {
   SYMBOL symbol[1000];
   create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL));
 
-  // translate_pt_to_ast(pt, bnf);
+  translate_pt_to_ast(pt, bnf);
 
   {
     FILE *fp;
