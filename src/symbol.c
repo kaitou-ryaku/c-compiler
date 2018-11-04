@@ -104,6 +104,7 @@ static int register_parameter_type_list(
   , PARSE_TREE* pt
   , SYMBOL* symbol
 );
+void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt);
 /*}}}*/
 extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
   initialize_symbol_table(symbol, symbol_max_size);
@@ -111,6 +112,7 @@ extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const
   int empty_symbol_id = 0;
   empty_symbol_id = create_symbol_function_recursive(empty_symbol_id, block, token, bnf, pt, symbol);
   empty_symbol_id = create_symbol_variable_recursive(empty_symbol_id, 0, block, token, bnf, pt, symbol);
+  delete_empty_external_declaration(bnf, pt);
 
   for (int i=0; i<empty_symbol_id; i++) {
     print_symbol_table_line(stderr, i, token, bnf, symbol);
@@ -753,4 +755,12 @@ static void delete_function(const int function_definition, const BNF* bnf, PARSE
   pt[identifier].right = compound_statement;
 
   pt[compound_statement].left = identifier;
+}/*}}}*/
+void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt) {/*{{{*/
+  int index = pt[0].down;
+  while (index >= 0) {
+    assert(is_pt_name("EXTERNAL_DECLARATION", pt[index], bnf));
+    if (pt[index].down < 0) delete_pt_recursive(index, pt);
+    index = pt[index].right;
+  }
 }/*}}}*/
