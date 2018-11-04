@@ -76,6 +76,7 @@ int main(void) {
 
   LEX_TOKEN token[1000];
   const int token_size = match_lexer(token, sizeof(token)/sizeof(LEX_TOKEN), bnf, src_str);
+  fprintf(stderr, "TOTAL TOKEN SIZE:%d\n", token_size);
   // print_token(stderr, bnf, token, token_size);
 
   BLOCK block[1000];
@@ -87,12 +88,13 @@ int main(void) {
   const int pt_size = parse_token_list(token, bnf, pair_bnf, pt, sizeof(pt)/sizeof(PARSE_TREE), memo, sizeof(memo)/sizeof(bool));
 
   fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
-  // print_parse_tree(stderr, pt_size, pt, bnf, token);
+  //print_parse_tree(stderr, pt_size, pt, bnf, token);
 
   SYMBOL symbol[1000];
   create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL));
 
-  //translate_pt_to_ast(pt, bnf);
+  translate_pt_to_ast(pt, bnf);
+  //print_parse_tree(stderr, pt_size, pt, bnf, token);
 
   {
     FILE *fp;

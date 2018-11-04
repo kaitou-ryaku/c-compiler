@@ -64,6 +64,7 @@ static int register_function(
   , SYMBOL* symbol
 );
 static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE* pt);
+static void delete_function(const int function_definition, const BNF* bnf, PARSE_TREE* pt);
 static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol);
 static bool delete_pt_recursive(const int index, PARSE_TREE* pt);
 static int register_parameter_declaration(
@@ -343,6 +344,8 @@ static int create_symbol_function_recursive(/*{{{*/
       new_symbol_empty_id = register_function(SYMBOL_TABLE_FUNCTION, function_id, function_definition, 0, token, bnf, pt, symbol);
       const int parameter_type_list = search_pt_index_right("PARAMETER_TYPE_LIST", pt[direct_declarator].down, pt, bnf);
       new_symbol_empty_id = register_parameter_type_list(SYMBOL_TABLE_F_ARGUMENT, function_id, new_symbol_empty_id, parameter_type_list, block, token, bnf, pt, symbol);
+
+      delete_function(function_definition, bnf, pt);
     }
     external_declaration = pt[external_declaration].right;
   }
@@ -728,4 +731,26 @@ static int register_parameter_type_list(/*{{{*/
   }
 
   return new_symbol_empty_id;
+}/*}}}*/
+static void delete_function(const int function_definition, const BNF* bnf, PARSE_TREE* pt) {/*{{{*/
+  const int declarator = search_pt_index_right("DECLARATOR", pt[function_definition].down, pt, bnf);
+  assert(declarator >= 0);
+
+  const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
+  assert(direct_declarator >= 0);
+
+  const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
+  assert(identifier >= 0);
+
+  const int compound_statement = search_pt_index_right("COMPOUND_STATEMENT", pt[function_definition].down, pt, bnf);
+  assert(compound_statement >= 0);
+
+  // FUNCTION_DEFINITION直下に関数名のidentifierを追加
+  pt[function_definition].down = identifier;
+  pt[identifier].up    = function_definition;
+  pt[identifier].down  = -1;
+  pt[identifier].left  = -1;
+  pt[identifier].right = compound_statement;
+
+  pt[compound_statement].left = identifier;
 }/*}}}*/

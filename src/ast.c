@@ -10,7 +10,7 @@
 static bool delete_lift_solitary_pt(const int index, PARSE_TREE* pt);
 static bool delete_solitary_container_recursive(const int top, PARSE_TREE* pt, const BNF* bnf);
 static void delete_solitary_container(PARSE_TREE* pt, const BNF* bnf);
-static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf);
+static bool delete_syntax_symbol_recursive(const int top, PARSE_TREE* pt, const BNF* bnf);
 static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf);
 static bool two_operatir_to_binary_tree_recursive(const int top, PARSE_TREE* pt, const BNF* bnf);
 static void two_operatir_to_binary_tree(PARSE_TREE* pt, const BNF* bnf);
@@ -146,18 +146,30 @@ static void delete_solitary_container(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
   bool is_del = true;
   while (is_del) is_del = delete_solitary_container_recursive(0, pt, bnf);
 }/*}}}*/
-static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
-  for (int i=0; i<pt[0].used_size; i++) {
-    if ( is_pt_name("lbrace"    , pt[i], bnf)
-      || is_pt_name("lbracket"  , pt[i], bnf)
-      || is_pt_name("lparen"    , pt[i], bnf)
-      || is_pt_name("rbrace"    , pt[i], bnf)
-      || is_pt_name("rbracket"  , pt[i], bnf)
-      || is_pt_name("rparen"    , pt[i], bnf)
-      || is_pt_name("semicolon" , pt[i], bnf)
-      || is_pt_name("comma"     , pt[i], bnf)
-    ) delete_lift_solitary_pt(i, pt);
+static bool delete_syntax_symbol_recursive(const int top, PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
+  bool is_del;
+
+  if ( is_pt_name("lbrace"    , pt[top], bnf)
+    || is_pt_name("lbracket"  , pt[top], bnf)
+    || is_pt_name("lparen"    , pt[top], bnf)
+    || is_pt_name("rbrace"    , pt[top], bnf)
+    || is_pt_name("rbracket"  , pt[top], bnf)
+    || is_pt_name("rparen"    , pt[top], bnf)
+    || is_pt_name("semicolon" , pt[top], bnf)
+    || is_pt_name("comma"     , pt[top], bnf)
+  ) {
+    is_del = delete_lift_solitary_pt(top, pt);
+  } else {
+    is_del = false;
   }
+
+  if (!is_del && (pt[top].down  >= 0)) is_del = delete_syntax_symbol_recursive(pt[top].down, pt, bnf);
+  if (!is_del && (pt[top].right >= 0)) is_del = delete_syntax_symbol_recursive(pt[top].right, pt, bnf);
+  return is_del;
+}/*}}}*/
+static void delete_syntax_symbol(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
+  bool is_del = true;
+  while (is_del) is_del = delete_syntax_symbol_recursive(0, pt, bnf);
 }/*}}}*/
 static bool two_operatir_to_binary_tree_recursive(const int top, PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
   bool is_change = false;
