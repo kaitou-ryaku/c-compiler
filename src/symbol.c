@@ -65,12 +65,27 @@ static int register_function(
 static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE* pt);
 static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol);
 static bool delete_pt_recursive(const int index, PARSE_TREE* pt);
+static int register_parameter_declaration(
+  const   int argument_id
+  , const int function_id
+  , const int kind
+  , const int symbol_empty_id
+  , const int parameter_declaration
+  , const int block_here
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+);
 /*}}}*/
 extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
   initialize_symbol_table(symbol, symbol_max_size);
-  create_symbol_function_recursive(0, block, token, bnf, pt, symbol);
-  create_symbol_variable_recursive(0, 0, block, token, bnf, pt, symbol);
-  for (int i=0; i<10; i++) {
+
+  int empty_symbol_id = 0;
+  empty_symbol_id = create_symbol_function_recursive(empty_symbol_id, block, token, bnf, pt, symbol);
+  empty_symbol_id = create_symbol_variable_recursive(empty_symbol_id, 0, block, token, bnf, pt, symbol);
+
+  for (int i=0; i<empty_symbol_id; i++) {
     print_symbol_table_line(stderr, i, token, bnf, symbol);
     fprintf(stderr, "\n");
   }
@@ -91,8 +106,9 @@ static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size) {
     symbol[i].addr            = -1;
     symbol[i].pointer         = -1;
     symbol[i].size            = -1;
-    symbol[i].arg_func_id     = -1;
-    symbol[i].func_arg_num    = -1;
+    symbol[i].function_id     = -1;
+    symbol[i].argument_id     = -1;
+    symbol[i].total_argument  = -1;
   }
 }/*}}}*/
 extern int create_block(BLOCK* block, const int block_max_size, const LEX_TOKEN* token) {/*{{{*/
@@ -206,6 +222,8 @@ static int create_symbol_variable_recursive(/*{{{*/
     ;
   }
   else if (is_pt_name("DECLARATION", pt[pt_top_index], bnf)) {
+    const int next_index = pt[pt_top_index].right;
+
     const int declaration = pt_top_index;
     const int up = pt[declaration].up;
     assert(pt[declaration].down >= 0);
@@ -260,13 +278,12 @@ static int create_symbol_variable_recursive(/*{{{*/
       }
     }
 
-    const int right = pt[pt_top_index].right;
-    if (right >= 0) create_symbol_variable_recursive(new_symbol_empty_id, right, block, token, bnf, pt, symbol);
+    if (next_index >= 0) new_symbol_empty_id = create_symbol_variable_recursive(new_symbol_empty_id, next_index, block, token, bnf, pt, symbol);
   }
 
   else {
     const int right = pt[pt_top_index].right;
-    if (right >= 0) new_symbol_empty_id = create_symbol_variable_recursive(symbol_empty_id, right, block, token, bnf, pt, symbol);
+    if (right >= 0) new_symbol_empty_id = create_symbol_variable_recursive(new_symbol_empty_id, right, block, token, bnf, pt, symbol);
     const int down  = pt[pt_top_index].down;
     if (down >= 0)  new_symbol_empty_id = create_symbol_variable_recursive(new_symbol_empty_id, down, block, token, bnf, pt, symbol);
   }
@@ -301,8 +318,32 @@ static int create_symbol_function_recursive(/*{{{*/
       print_parse_tree_unit(stderr, identifier, pt, bnf, token);
       fprintf(stderr, " FUNCTION_DEFINITION ");
       fprintf(stderr, "\n");
-      new_symbol_empty_id = register_function(SYMBOL_TABLE_FUNCTION, new_symbol_empty_id, function_definition, 0, token, bnf, pt, symbol);
-      // delete_declaration(declaration, bnf, pt);
+      const int function_id = new_symbol_empty_id;
+      new_symbol_empty_id = register_function(SYMBOL_TABLE_FUNCTION, function_id, function_definition, 0, token, bnf, pt, symbol);
+
+      // 引数のスコープを関数定義の本体に一致させる
+      const int compound_statement = search_pt_index_right("COMPOUND_STATEMENT", pt[function_definition].down, pt, bnf);
+      const int block_compound_statement = block[pt[compound_statement].token_begin_index].here;
+
+      const int parameter_type_list = search_pt_index_right("PARAMETER_TYPE_LIST", pt[direct_declarator].down, pt, bnf);
+      // 引数が存在しない場合
+      if (parameter_type_list < 0) {
+        symbol[function_id].total_argument = 0;
+      }
+
+      // 引数が存在する場合は登録する
+      else {
+        const int parameter_list = search_pt_index_right("PARAMETER_LIST", pt[parameter_type_list].down, pt, bnf);
+        int parameter_declaration = pt[parameter_list].down;
+        int argument_id = 0;
+        while (parameter_declaration >= 0) {
+          if (is_pt_name("PARAMETER_DECLARATION", pt[parameter_declaration], bnf)) {
+            new_symbol_empty_id = register_parameter_declaration(argument_id, function_id, SYMBOL_TABLE_F_ARGUMENT, new_symbol_empty_id, parameter_declaration, block_compound_statement, token, bnf, pt, symbol);
+            argument_id++;
+          }
+          parameter_declaration = pt[parameter_declaration].right;
+        }
+      }
     }
 
     external_declaration = pt[external_declaration].right;
@@ -513,7 +554,7 @@ static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE
   }
 }/*}}}*/
 static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol) {/*{{{*/
-  fprintf(fp, "id:%d ", symbol[line].id);
+  fprintf(fp, "id:%03d ", symbol[line].id);
 
   if (symbol[line].kind == -1) fprintf(fp, "UNUSED     ");
   if (symbol[line].kind == 0 ) fprintf(fp, "VARIABLE   ");
@@ -553,8 +594,9 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   fprintf(fp, "block:%3d ", symbol[line].block);
   fprintf(fp, "addr:%3d ", symbol[line].addr);
   fprintf(fp, "size:%3d ", symbol[line].size);
-  fprintf(fp, "arg_func_id:%3d ", symbol[line].arg_func_id);
-  fprintf(fp, "func_arg_num:%3d", symbol[line].func_arg_num);
+  fprintf(fp, "func:%3d ", symbol[line].function_id);
+  fprintf(fp, "arg:%3d ", symbol[line].argument_id);
+  fprintf(fp, "arg_tot:%3d ", symbol[line].total_argument);
 }/*}}}*/
 static bool delete_pt_recursive(const int index, PARSE_TREE* pt) {/*{{{*/
   bool ret;
@@ -587,4 +629,79 @@ static bool delete_pt_recursive(const int index, PARSE_TREE* pt) {/*{{{*/
   }
 
   return ret;
+}/*}}}*/
+static int register_parameter_declaration(/*{{{*/
+  const   int argument_id
+  , const int function_id
+  , const int kind
+  , const int symbol_empty_id
+  , const int parameter_declaration
+  , const int block_here
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+
+  // 必ず存在するノード
+  int declaration_specifier = search_pt_index_right("DECLARATION_SPECIFIER", pt[parameter_declaration].down, pt, bnf);
+  assert(declaration_specifier >= 0);
+
+  const int declarator = search_pt_index_right("DECLARATOR", pt[parameter_declaration].down, pt, bnf);
+  assert(declarator >= 0);
+
+  const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
+  assert(direct_declarator >= 0);
+
+  const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
+  assert(identifier >= 0);
+
+  // 登録
+  symbol[symbol_empty_id].token_id = pt[identifier].token_begin_index;
+  symbol[symbol_empty_id].kind = kind;
+  symbol[symbol_empty_id].block = block_here;
+  symbol[symbol_empty_id].function_id = function_id;
+  symbol[symbol_empty_id].argument_id = argument_id;
+
+  // 型
+  while (is_pt_name("DECLARATION_SPECIFIER", pt[declaration_specifier], bnf)) {
+    const int specifier = pt[declaration_specifier].down;
+    assert(specifier >= 0);
+    const int keyword = pt[pt[declaration_specifier].down].down;
+    assert(keyword >= 0);
+
+    if (is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
+      assert(symbol[symbol_empty_id].type < 0);
+      symbol[symbol_empty_id].type = pt[keyword].bnf_id;
+    }
+    if (is_pt_name("STORAGE_CLASS_SPECIFIER", pt[specifier], bnf)) {
+      assert(symbol[symbol_empty_id].storage < 0);
+      symbol[symbol_empty_id].storage = pt[keyword].bnf_id;
+    }
+    if (is_pt_name("TYPE_QUALIFIER", pt[specifier], bnf)) {
+      assert(symbol[symbol_empty_id].qualify < 0);
+      symbol[symbol_empty_id].qualify = pt[keyword].bnf_id;
+    }
+
+    declaration_specifier = pt[declaration_specifier].right;
+  }
+
+  // ポインタ
+  int pointer = search_pt_index_right("POINTER", pt[declarator].down, pt, bnf);
+  int pointer_depth = 0;
+  while (pointer >= 0) {
+    assert(pointer >= 0);
+
+    if ( is_pt_name("star"    , pt[pt[pointer].down], bnf)) pointer_depth++;
+    if ( is_pt_name("const"   , pt[pt[pointer].down], bnf)
+      || is_pt_name("volatile", pt[pt[pointer].down], bnf)
+    ) {
+      symbol[symbol_empty_id].pointer_qualify = pt[pt[pointer].down].bnf_id;
+    }
+
+    pointer = pt[pt[pointer].down].right;
+  }
+  symbol[symbol_empty_id].pointer = pointer_depth;
+
+  return symbol_empty_id+1;
 }/*}}}*/

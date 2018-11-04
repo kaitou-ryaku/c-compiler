@@ -76,7 +76,7 @@ int main(void) {
 
   LEX_TOKEN token[1000];
   const int token_size = match_lexer(token, sizeof(token)/sizeof(LEX_TOKEN), bnf, src_str);
-  print_token(stderr, bnf, token, token_size);
+  // print_token(stderr, bnf, token, token_size);
 
   BLOCK block[1000];
   create_block(block, sizeof(block)/sizeof(BLOCK), token);

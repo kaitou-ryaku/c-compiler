@@ -17,8 +17,9 @@ typedef struct {
   int   addr;
   int   pointer; // 0:int a; 1:int *a; 2:int **a;
   int   size;    // char:1 int:4
-  int   arg_func_id; // 引数の場合、親関数のidを入れる
-  int   func_arg_num; // 関数の場合、引数の個数を入れる
+  int   function_id;  // 引数の場合、親関数のidを入れる
+  int   argument_id;  // 引数の場合、何番目の引数か入れる
+  int   total_argument; // 関数の場合、引数の個数を入れる
 } SYMBOL;
 
 typedef struct {
