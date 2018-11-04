@@ -288,6 +288,12 @@ static int create_symbol_variable_recursive(/*{{{*/
       // 関数プロトタイプ宣言
       if (rparen >= 0) {
         new_symbol_empty_id = register_declaration(SYMBOL_TABLE_PROTOTYPE, symbol_empty_id, declaration, 0, token, bnf, pt, symbol);
+
+        // 関数名と型を登録
+        const int prototype_id = symbol_empty_id;
+        const int parameter_type_list = search_pt_index_right("PARAMETER_TYPE_LIST", pt[direct_declarator].down, pt, bnf);
+        new_symbol_empty_id = register_parameter_type_list(SYMBOL_TABLE_P_ARGUMENT, prototype_id, new_symbol_empty_id, parameter_type_list, block, token, bnf, pt, symbol);
+
         delete_declaration(declaration, bnf, pt);
       }
 
@@ -335,8 +341,6 @@ static int create_symbol_function_recursive(/*{{{*/
       // 関数名と型を登録
       const int function_id = new_symbol_empty_id;
       new_symbol_empty_id = register_function(SYMBOL_TABLE_FUNCTION, function_id, function_definition, 0, token, bnf, pt, symbol);
-
-      // 引数のスコープを関数定義の本体に一致させる
       const int parameter_type_list = search_pt_index_right("PARAMETER_TYPE_LIST", pt[direct_declarator].down, pt, bnf);
       new_symbol_empty_id = register_parameter_type_list(SYMBOL_TABLE_F_ARGUMENT, function_id, new_symbol_empty_id, parameter_type_list, block, token, bnf, pt, symbol);
     }
@@ -691,7 +695,7 @@ static int register_parameter_type_list(/*{{{*/
       const int tmp_id = register_parameter_declaration(
         argument_id
         , function_id
-        , SYMBOL_TABLE_F_ARGUMENT
+        , kind
         , new_symbol_empty_id
         , parameter_declaration
         , block_compound_statement
