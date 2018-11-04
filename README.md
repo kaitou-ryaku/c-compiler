@@ -1,1 +1,6 @@
 # c-compiler
+
+### License
+
+MIT
+
