@@ -16,6 +16,7 @@ const int SYMBOL_TABLE_P_ARGUMENT = 4;
 
 // 関数プロトタイプ/*{{{*/
 static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size);
+static void initialize_symbol_table_unit(SYMBOL* symbol, const int index);
 static int cretae_block_recursive(
  const   int        token_begin_index
  , const int        token_end_index
@@ -84,7 +85,7 @@ static int register_pointer(
   , PARSE_TREE* pt
   , SYMBOL* symbol
 );
-static bool register_type(
+static void register_type(
   const   int symbol_empty_id
   , const int declaration_specifier
   , const BNF* bnf
@@ -118,23 +119,26 @@ extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const
 }/*}}}*/
 static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
   for (int i=0; i<symbol_max_size; i++) {
-    symbol[i].id              = i;
-    symbol[i].total_size      = symbol_max_size;
-    symbol[i].used_size       = 0;
-    symbol[i].token_id        = -1;
-    symbol[i].kind            = SYMBOL_TABLE_UNUSED;
-    symbol[i].type            = -1;
-    symbol[i].storage         = -1;
-    symbol[i].qualify         = -1;
-    symbol[i].pointer_qualify = -1;
-    symbol[i].block           = -1;
-    symbol[i].addr            = -1;
-    symbol[i].pointer         = -1;
-    symbol[i].size            = -1;
-    symbol[i].function_id     = -1;
-    symbol[i].argument_id     = -1;
-    symbol[i].total_argument  = -1;
+    symbol[i].id         = i;
+    symbol[i].total_size = symbol_max_size;
+    initialize_symbol_table_unit(symbol, i);
   }
+}/*}}}*/
+static void initialize_symbol_table_unit(SYMBOL* symbol, const int index) {/*{{{*/
+  symbol[index].used_size       = 0;
+  symbol[index].token_id        = -1;
+  symbol[index].kind            = SYMBOL_TABLE_UNUSED;
+  symbol[index].type            = -1;
+  symbol[index].storage         = -1;
+  symbol[index].qualify         = -1;
+  symbol[index].pointer_qualify = -1;
+  symbol[index].block           = -1;
+  symbol[index].addr            = -1;
+  symbol[index].pointer         = -1;
+  symbol[index].size            = -1;
+  symbol[index].function_id     = -1;
+  symbol[index].argument_id     = -1;
+  symbol[index].total_argument  = -1;
 }/*}}}*/
 extern int create_block(BLOCK* block, const int block_max_size, const LEX_TOKEN* token) {/*{{{*/
   assert(token[0].used_size < block_max_size);
@@ -554,43 +558,46 @@ static int register_parameter_declaration(/*{{{*/
   , PARSE_TREE* pt
   , SYMBOL* symbol
 ) {
+
   int declaration_specifier = search_pt_index_right("DECLARATION_SPECIFIER", pt[parameter_declaration].down, pt, bnf);
   assert(declaration_specifier >= 0);
 
   const int declarator = search_pt_index_right("DECLARATOR", pt[parameter_declaration].down, pt, bnf);
-  assert(declarator >= 0);
 
-  const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
-  assert(direct_declarator >= 0);
+  // 関数プロトタイプや関数定義のvoidなど、identifierが存在しないパターンを考慮して分岐
+  if (declarator >= 0) {
+    const int pointer = search_pt_index_right("POINTER", pt[declarator].down, pt, bnf);
+    register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
 
-  const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
-  assert(identifier >= 0);
+    const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
 
-  const int pointer = search_pt_index_right("POINTER", pt[declarator].down, pt, bnf);
+    symbol[symbol_empty_id].token_id = -1;
+    if (direct_declarator >= 0) {
+      const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
+      if (identifier >= 0) symbol[symbol_empty_id].token_id = pt[identifier].token_begin_index;
+    }
+  }
 
-  symbol[symbol_empty_id].token_id = pt[identifier].token_begin_index;
   symbol[symbol_empty_id].kind = kind;
   symbol[symbol_empty_id].block = block_here;
   symbol[symbol_empty_id].function_id = function_id;
   symbol[symbol_empty_id].argument_id = argument_id;
   register_type(symbol_empty_id, declaration_specifier, bnf, pt, symbol);
-  register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
 
   return symbol_empty_id+1;
 }/*}}}*/
-static bool register_type(/*{{{*/
+static void register_type(/*{{{*/
   const   int symbol_empty_id
   , const int declaration_specifier
   , const BNF* bnf
   , PARSE_TREE* pt
   , SYMBOL* symbol
 ) {
-
-  // 引数が存在し、voidでなければtrueを返す
-  bool is_not_void = false;
   int tmp_declaration_specifier = declaration_specifier;
 
-  while (is_pt_name("DECLARATION_SPECIFIER", pt[tmp_declaration_specifier], bnf)) {
+  while (tmp_declaration_specifier >= 0) {
+    if (!is_pt_name("DECLARATION_SPECIFIER", pt[tmp_declaration_specifier], bnf)) break;
+
     const int specifier = pt[tmp_declaration_specifier].down;
     assert(specifier >= 0);
     const int keyword = pt[pt[tmp_declaration_specifier].down].down;
@@ -599,7 +606,6 @@ static bool register_type(/*{{{*/
     if (is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
       assert(symbol[symbol_empty_id].type < 0);
       symbol[symbol_empty_id].type = pt[keyword].bnf_id;
-      if (!is_pt_name("void", pt[keyword], bnf)) is_not_void = true;
     }
     if (is_pt_name("STORAGE_CLASS_SPECIFIER", pt[specifier], bnf)) {
       assert(symbol[symbol_empty_id].storage < 0);
@@ -612,8 +618,6 @@ static bool register_type(/*{{{*/
 
     tmp_declaration_specifier = pt[tmp_declaration_specifier].right;
   }
-
-  return is_not_void;
 }/*}}}*/
 static int register_pointer(/*{{{*/
   const   int symbol_empty_id
@@ -651,12 +655,15 @@ static int register_parameter_type_list(/*{{{*/
   , SYMBOL* symbol
 ) {
 
+  const bool is_f_argument = (kind == SYMBOL_TABLE_F_ARGUMENT);
+  const bool is_p_argument = (kind == SYMBOL_TABLE_P_ARGUMENT);
+
   // 関数定義と関数プロトタイプによって、引数のスコープを分岐
   int block_compound_statement;
-  if (kind == SYMBOL_TABLE_F_ARGUMENT) {
+  if (is_f_argument) {
     const int compound_statement = search_pt_index_right("COMPOUND_STATEMENT", pt[pt[parameter_type_list].up].up, pt, bnf);
     block_compound_statement = block[pt[compound_statement].token_begin_index].here;
-  } else if (kind == SYMBOL_TABLE_P_ARGUMENT) {
+  } else if (is_p_argument) {
     block_compound_statement = -1;
   } else {
     assert(0);
@@ -676,10 +683,41 @@ static int register_parameter_type_list(/*{{{*/
     int parameter_declaration = pt[parameter_list].down;
 
     while (parameter_declaration >= 0) {
-      if (is_pt_name("PARAMETER_DECLARATION", pt[parameter_declaration], bnf)) {
-        new_symbol_empty_id = register_parameter_declaration(argument_id, function_id, SYMBOL_TABLE_F_ARGUMENT, new_symbol_empty_id, parameter_declaration, block_compound_statement, token, bnf, pt, symbol);
+      if (!is_pt_name("PARAMETER_DECLARATION", pt[parameter_declaration], bnf)) {
+        parameter_declaration = pt[parameter_declaration].right;
+        continue;
+      }
+
+      const int tmp_id = register_parameter_declaration(
+        argument_id
+        , function_id
+        , SYMBOL_TABLE_F_ARGUMENT
+        , new_symbol_empty_id
+        , parameter_declaration
+        , block_compound_statement
+        , token
+        , bnf
+        , pt
+        , symbol
+      );
+
+      // voidの場合
+      const int type_id = symbol[new_symbol_empty_id].type;
+      if ((type_id < 0) || (0 == strcmp("void", bnf[type_id].name))) {
+        initialize_symbol_table_unit(symbol, new_symbol_empty_id);
+
+      // int等の場合
+      } else {
+        // 関数定義で変数名が無かったらエラー
+        if (symbol[new_symbol_empty_id].token_id < 0) {
+          fprintf(stderr, "ERROR: Function definition argument lacks identifier.\n");
+          assert(0);
+        }
+
+        new_symbol_empty_id = tmp_id;
         argument_id++;
       }
+
       parameter_declaration = pt[parameter_declaration].right;
     }
     symbol[function_id].total_argument = argument_id;
