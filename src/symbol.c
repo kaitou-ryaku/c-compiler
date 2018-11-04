@@ -91,6 +91,17 @@ static bool register_type(
   , PARSE_TREE* pt
   , SYMBOL* symbol
 );
+static int register_parameter_type_list(
+  const   int  kind
+  , const int function_id
+  , const int symbol_empty_id
+  , const int parameter_type_list
+  , const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+);
 /*}}}*/
 extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
   initialize_symbol_table(symbol, symbol_max_size);
@@ -322,31 +333,9 @@ static int create_symbol_function_recursive(/*{{{*/
       new_symbol_empty_id = register_function(SYMBOL_TABLE_FUNCTION, function_id, function_definition, 0, token, bnf, pt, symbol);
 
       // 引数のスコープを関数定義の本体に一致させる
-      const int compound_statement = search_pt_index_right("COMPOUND_STATEMENT", pt[function_definition].down, pt, bnf);
-      const int block_compound_statement = block[pt[compound_statement].token_begin_index].here;
       const int parameter_type_list = search_pt_index_right("PARAMETER_TYPE_LIST", pt[direct_declarator].down, pt, bnf);
-
-      // 引数が存在しない場合
-      if (parameter_type_list < 0) {
-        symbol[function_id].total_argument = 0;
-      }
-
-      // 引数が存在する場合は登録する
-      else {
-        const int parameter_list = search_pt_index_right("PARAMETER_LIST", pt[parameter_type_list].down, pt, bnf);
-        int parameter_declaration = pt[parameter_list].down;
-        int argument_id = 0;
-        while (parameter_declaration >= 0) {
-          if (is_pt_name("PARAMETER_DECLARATION", pt[parameter_declaration], bnf)) {
-            new_symbol_empty_id = register_parameter_declaration(argument_id, function_id, SYMBOL_TABLE_F_ARGUMENT, new_symbol_empty_id, parameter_declaration, block_compound_statement, token, bnf, pt, symbol);
-            argument_id++;
-          }
-          parameter_declaration = pt[parameter_declaration].right;
-        }
-        symbol[function_id].total_argument = argument_id;
-      }
+      new_symbol_empty_id = register_parameter_type_list(SYMBOL_TABLE_F_ARGUMENT, function_id, new_symbol_empty_id, parameter_type_list, block, token, bnf, pt, symbol);
     }
-
     external_declaration = pt[external_declaration].right;
   }
 
@@ -649,4 +638,52 @@ static int register_pointer(/*{{{*/
   symbol[symbol_empty_id].pointer = pointer_depth;
 
   return pointer_depth;
+}/*}}}*/
+static int register_parameter_type_list(/*{{{*/
+  const int  kind
+  , const int function_id
+  , const int symbol_empty_id
+  , const int parameter_type_list
+  , const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+
+  // 関数定義と関数プロトタイプによって、引数のスコープを分岐
+  int block_compound_statement;
+  if (kind == SYMBOL_TABLE_F_ARGUMENT) {
+    const int compound_statement = search_pt_index_right("COMPOUND_STATEMENT", pt[pt[parameter_type_list].up].up, pt, bnf);
+    block_compound_statement = block[pt[compound_statement].token_begin_index].here;
+  } else if (kind == SYMBOL_TABLE_P_ARGUMENT) {
+    block_compound_statement = -1;
+  } else {
+    assert(0);
+  }
+
+  int argument_id = 0;
+  int new_symbol_empty_id = symbol_empty_id;
+
+  // 引数が存在しない場合
+  if (parameter_type_list < 0) {
+    symbol[function_id].total_argument = argument_id;
+  }
+
+  // 引数が存在する場合は登録する
+  else {
+    const int parameter_list = search_pt_index_right("PARAMETER_LIST", pt[parameter_type_list].down, pt, bnf);
+    int parameter_declaration = pt[parameter_list].down;
+
+    while (parameter_declaration >= 0) {
+      if (is_pt_name("PARAMETER_DECLARATION", pt[parameter_declaration], bnf)) {
+        new_symbol_empty_id = register_parameter_declaration(argument_id, function_id, SYMBOL_TABLE_F_ARGUMENT, new_symbol_empty_id, parameter_declaration, block_compound_statement, token, bnf, pt, symbol);
+        argument_id++;
+      }
+      parameter_declaration = pt[parameter_declaration].right;
+    }
+    symbol[function_id].total_argument = argument_id;
+  }
+
+  return new_symbol_empty_id;
 }/*}}}*/
