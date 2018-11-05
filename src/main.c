@@ -84,17 +84,18 @@ int main(void) {
   print_block(stderr, block, token);
 
   PARSE_TREE pt[5000];
-  static bool memo[255*2000*2000];
-  const int pt_size = parse_token_list(token, bnf, pair_bnf, pt, sizeof(pt)/sizeof(PARSE_TREE), memo, sizeof(memo)/sizeof(bool));
+  static PARSE_MEMO memo[1000000];
+  const int pt_size = parse_token_list(token, bnf, pair_bnf, pt, sizeof(pt)/sizeof(PARSE_TREE), memo, sizeof(memo)/sizeof(PARSE_MEMO));
 
   fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
-  //print_parse_tree(stderr, pt_size, pt, bnf, token);
+  print_parse_tree(stderr, pt_size, pt, bnf, token);
 
-  SYMBOL symbol[1000];
-  create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL));
+  //配列に未対応なので一旦コメントアウト
+  //SYMBOL symbol[1000];
+  //create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL));
 
   translate_pt_to_ast(pt, bnf);
-  //print_parse_tree(stderr, pt_size, pt, bnf, token);
+  print_parse_tree(stderr, pt_size, pt, bnf, token);
 
   {
     FILE *fp;
