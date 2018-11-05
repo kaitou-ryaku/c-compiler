@@ -1,5 +1,5 @@
 CC      := gcc
-CFLAGS  := -std=c99 -O0 -Wall
+CFLAGS  := -std=c99 -O3 -Wall
 
 ARCHIVE := compiler.a
 PARSER  := min-bnf-parser/min-bnf-parser.a
