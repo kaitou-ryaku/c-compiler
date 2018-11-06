@@ -82,14 +82,14 @@ int main(void) {
   print_block(stderr, block, token);
 
   replace_typedef(stderr, block, token, bnf);
-  print_token(stderr, bnf, token, token_size);
+  //print_token(stderr, bnf, token, token_size);
 
-  //static PARSE_TREE pt[500000];
-  //static PARSE_MEMO memo[2000000]; // これがメモリを一番食う
-  //const int pt_size = parse_token_list(token, bnf, pair_bnf, pt, sizeof(pt)/sizeof(PARSE_TREE), memo, sizeof(memo)/sizeof(PARSE_MEMO));
+  static PARSE_TREE pt[500000];
+  static PARSE_MEMO memo[2000000]; // これがメモリを一番食う
+  const int pt_size = parse_token_list(token, bnf, pair_bnf, pt, sizeof(pt)/sizeof(PARSE_TREE), memo, sizeof(memo)/sizeof(PARSE_MEMO));
 
-  //fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
-  ////print_parse_tree(stderr, pt_size, pt, bnf, token);
+  fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
+  //print_parse_tree(stderr, pt_size, pt, bnf, token);
 
   //static SYMBOL symbol[10000];
   //create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL));
@@ -97,17 +97,17 @@ int main(void) {
   //translate_pt_to_ast(pt, bnf);
   //print_parse_tree(stderr, pt_size, pt, bnf, token);
 
-  //{
-  //  FILE *fp;
-  //  char *filename = "parse_tree.dot";
-  //  if ((fp = fopen(filename, "w")) == NULL) {
-  //    fprintf(stderr, "Error: Failed to open %s\n", filename);
-  //  }
+  {
+    FILE *fp;
+    char *filename = "parse_tree.dot";
+    if ((fp = fopen(filename, "w")) == NULL) {
+      fprintf(stderr, "Error: Failed to open %s\n", filename);
+    }
 
-  //  origin_parse_tree_to_dot(fp, 0, pt, bnf, token, "12.0", NULL, "#FF0000", "#000000");
+    origin_parse_tree_to_dot(fp, 0, pt, bnf, token, "12.0", NULL, "#FF0000", "#000000");
 
-  //  fclose(fp);
-  //}
+    fclose(fp);
+  }
 
   return 0;
 }
