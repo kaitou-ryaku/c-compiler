@@ -1,4 +1,4 @@
-TYPEDEF_NAME         : __TO_DO_WORK_0__
+typedef_name         : __TO_DO_WORK_0__
 character_constant   : '(@|\\)(\l|\u|\d| |!|\@|#|$|%|^|&|\*|-|=|`|_|+|\||~|[|]|{|}|;|'|:|,|.|/|<|>|?)'
 enumeration_constant : __TO_DO_WORK_2__
 string               : "(\l|\u|_|\d| |%)*"

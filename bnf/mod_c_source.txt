@@ -1,15 +1,15 @@
-int main1(const int argc1, const char** argv1) {
-  const int* const a1 = func(b1,c1(d1));
-  if (1==2) {
-    int x1 = *a1;
+int i, j;
+void f() {
+  (i)-j;
+  i*j;
+  {
+    typedef int i;
+    (i)-j;
+    i*j;
   }
-  return *a1;
-}
-
-int main2(const int argc2, const char** argv2) {
-  const int* const a2 = func(b2,c2(d2));
-  if (3==4) {
-    int x2 = *a2;
-  }
-  return *a2;
+  (i)-j;
+  i*j;
+  typedef int i;
+  (i)-j;
+  i*j;
 }

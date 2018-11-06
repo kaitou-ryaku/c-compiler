@@ -3,6 +3,7 @@
 #include "../include/ast.h"
 #include "../include/common.h"
 #include "../include/symbol.h"
+#include "../include/typedef.h"
 #include <stdio.h>
 
 static void read_file(const char* filename, char* str, const int str_max_size);
@@ -80,30 +81,33 @@ int main(void) {
   create_block(block, sizeof(block)/sizeof(BLOCK), token);
   print_block(stderr, block, token);
 
-  static PARSE_TREE pt[500000];
-  static PARSE_MEMO memo[2000000]; // これがメモリを一番食う
-  const int pt_size = parse_token_list(token, bnf, pair_bnf, pt, sizeof(pt)/sizeof(PARSE_TREE), memo, sizeof(memo)/sizeof(PARSE_MEMO));
+  replace_typedef(stderr, block, token, bnf);
+  print_token(stderr, bnf, token, token_size);
 
-  fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
+  //static PARSE_TREE pt[500000];
+  //static PARSE_MEMO memo[2000000]; // これがメモリを一番食う
+  //const int pt_size = parse_token_list(token, bnf, pair_bnf, pt, sizeof(pt)/sizeof(PARSE_TREE), memo, sizeof(memo)/sizeof(PARSE_MEMO));
+
+  //fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
+  ////print_parse_tree(stderr, pt_size, pt, bnf, token);
+
+  //static SYMBOL symbol[10000];
+  //create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL));
+
+  //translate_pt_to_ast(pt, bnf);
   //print_parse_tree(stderr, pt_size, pt, bnf, token);
 
-  static SYMBOL symbol[10000];
-  create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL));
+  //{
+  //  FILE *fp;
+  //  char *filename = "parse_tree.dot";
+  //  if ((fp = fopen(filename, "w")) == NULL) {
+  //    fprintf(stderr, "Error: Failed to open %s\n", filename);
+  //  }
 
-  translate_pt_to_ast(pt, bnf);
-  print_parse_tree(stderr, pt_size, pt, bnf, token);
+  //  origin_parse_tree_to_dot(fp, 0, pt, bnf, token, "12.0", NULL, "#FF0000", "#000000");
 
-  {
-    FILE *fp;
-    char *filename = "parse_tree.dot";
-    if ((fp = fopen(filename, "w")) == NULL) {
-      fprintf(stderr, "Error: Failed to open %s\n", filename);
-    }
-
-    origin_parse_tree_to_dot(fp, 0, pt, bnf, token, "12.0", NULL, "#FF0000", "#000000");
-
-    fclose(fp);
-  }
+  //  fclose(fp);
+  //}
 
   return 0;
 }
