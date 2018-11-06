@@ -1,78 +1,15 @@
-static int delete_lift_solitary_pt(const int index, char* pt) {
-
-  int ret;
-  const char del = pt[index];
-
-  const int alone     = (del.left <  0 && del.right <  0);
-  const int leftside  = (del.left <  0 && del.right >= 0);
-  const int rightside = (del.left >= 0 && del.right <  0);
-  const int center    = (del.left >= 0 && del.right >= 0);
-
-
-  if (del.up < 0) {
-    ret = false;
+int main1(const int argc1, const char** argv1) {
+  const int* const a1 = func(b1,c1(d1));
+  if (1==2) {
+    int x1 = *a1;
   }
-
-  else if (del.down < 0) {
-    ret = true;
-
-    if (alone) {
-      pt[del.up].down = -1;
-    }
-
-    if (leftside) {
-      pt[del.up].down = del.right;
-      pt[del.right].left = -1;
-    }
-
-    if (rightside) {
-      pt[del.left].right = -1;
-    }
-
-    if (center) {
-      pt[del.left].right = del.right;
-      pt[del.right].left = del.left;
-    }
-  }
-
-  else if (pt[del.down].left < 0 && pt[del.down].right < 0) {
-    ret = true;
-
-    if (alone) {
-      pt[del.up].down = del.down;
-      pt[del.down].up = del.up;
-    }
-
-    if (leftside) {
-      pt[del.up].down = del.down;
-      pt[del.down].up = del.up;
-
-      pt[del.right].left = del.down;
-      pt[del.down].right = del.right;
-    }
-
-    if (rightside) {
-      pt[del.down].up = del.up;
-
-      pt[del.left].right = del.down;
-      pt[del.down].left  = del.left;
-    }
-
-    if (center) {
-      pt[del.down].up = del.up;
-
-      pt[del.right].left = del.down;
-      pt[del.down].right = del.right;
-
-      pt[del.left].right = del.down;
-      pt[del.down].left  = del.left;
-    }
-  }
-
-  else {
-    ret = false;
-  }
-
-  return ret;
+  return *a1;
 }
 
+int main2(const int argc2, const char** argv2) {
+  const int* const a2 = func(b2,c2(d2));
+  if (3==4) {
+    int x2 = *a2;
+  }
+  return *a2;
+}

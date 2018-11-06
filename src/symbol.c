@@ -502,18 +502,18 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
     fprintf(fp, "-------------- ");
   }
 
-  if (NULL != bnf[symbol[line].type].name) fprintf(fp, "%10s ", bnf[symbol[line].type].name);
+  if (symbol[line].type >= 0) fprintf(fp, "%10s ", bnf[symbol[line].type].name);
   else fprintf(fp, "           ");
 
-  if (NULL != bnf[symbol[line].storage].name) fprintf(fp, "%10s ", bnf[symbol[line].storage].name);
+  if (symbol[line].storage >= 0) fprintf(fp, "%10s ", bnf[symbol[line].storage].name);
   else fprintf(fp, "           ");
 
-  if (NULL != bnf[symbol[line].qualify].name) fprintf(fp, "%10s ", bnf[symbol[line].qualify].name);
+  if (symbol[line].qualify >= 0) fprintf(fp, "%10s ", bnf[symbol[line].qualify].name);
   else fprintf(fp, "           ");
 
   fprintf(fp, "pointer:%3d ", symbol[line].pointer);
 
-  if (NULL != bnf[symbol[line].pointer_qualify].name) fprintf(fp, "%10s ", bnf[symbol[line].pointer_qualify].name);
+  if (symbol[line].pointer_qualify >= 0) fprintf(fp, "%10s ", bnf[symbol[line].pointer_qualify].name);
   else fprintf(fp, "           ");
 
   fprintf(fp, "block:%3d ", symbol[line].block);
