@@ -28,6 +28,7 @@ ADDITIVE_EXPRESSION        : MULTIPLICATIVE_EXPRESSION ( plus MULTIPLICATIVE_EXP
 MULTIPLICATIVE_EXPRESSION  : CAST_EXPRESSION ( star CAST_EXPRESSION | slash CAST_EXPRESSION | percent CAST_EXPRESSION ) *
 CAST_EXPRESSION            : ( UNARY_EXPRESSION | lparen TYPE_NAME rparen CAST_EXPRESSION )
 UNARY_EXPRESSION           : ( POSTFIX_EXPRESSION | plus_plus UNARY_EXPRESSION | minus_minus UNARY_EXPRESSION | UNARY_OPERATOR CAST_EXPRESSION | sizeof UNARY_EXPRESSION | sizeof TYPE_NAME )
+//"POSTFIX_EXPRESSION         : PRIMARY_EXPRESSION ( lbrace EXPRESSION rbrace | lparen ASSIGNMENT_EXPRESSION * rparen | dot identifier | minus_rangle identifier | plus_plus | minus_minus ) *
 POSTFIX_EXPRESSION         : PRIMARY_EXPRESSION ( lbrace EXPRESSION rbrace | lparen ARGUMENT_EXPRESSION_LIST rparen | dot identifier | minus_rangle identifier | plus_plus | minus_minus ) *
 ARGUMENT_EXPRESSION_LIST   : ASSIGNMENT_EXPRESSION ( comma ASSIGNMENT_EXPRESSION )*
 PRIMARY_EXPRESSION         : ( identifier | CONSTANT | string | lparen EXPRESSION rparen )
@@ -45,6 +46,7 @@ DIRECT_ABSTRACT_DECLARATOR : ( lparen ABSTRACT_DECLARATOR rparen | lbrace ( @ | 
 ENUM_SPECIFIER             : ( enum identifier lbracket ENUMERATOR_LIST rbracket | enum lbracket ENUMERATOR_LIST rbracket | enum identifier )
 ENUMERATOR_LIST            : ENUMERATOR ( comma ENUMERATOR ) *
 ENUMERATOR                 : ( identifier | identifier equal CONSTANT_EXPRESSION )
+//"TYPEDEF_NAME               : identifier
 DECLARATION                :  DECLARATION_SPECIFIER DECLARATION_SPECIFIER * INIT_DECLARATOR * semicolon
 INIT_DECLARATOR            : ( DECLARATOR | DECLARATOR equal INITIALIZER )
 INITIALIZER                : ( ASSIGNMENT_EXPRESSION | lbracket INITIALIZER_LIST rbracket | lbracket INITIALIZER_LIST comma rbracket )

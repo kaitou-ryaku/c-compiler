@@ -1,86 +1,86 @@
-"TYPEDEF_NAME         : __TO_DO_WORK_0__" "\n"
-"character_constant   : '(@|\\\\)(\\l|\\u|\\d| |!|\\@|#|$|%|^|&|\\*|-|=|`|_|+|\\||~|[|]|{|}|;|'|:|,|.|/|<|>|?)'" "\n"
-"enumeration_constant : __TO_DO_WORK_2__" "\n"
-"string               : \"(\\l|\\u|_|\\d| |%)*\"" "\n"
-"skip                 : ( )( )*"                  "\n"
-"floating_constant    : (0|(1|2|3|4|5|6|7|8|9)\\d*)\\.\\d*" "\n"
-"integer_constant     : (0|(1|2|3|4|5|6|7|8|9)\\d*)"        "\n"
-"auto                 : auto"      "\n"
-"break                : break"     "\n"
-"case                 : case"      "\n"
-"char                 : char"      "\n"
-"const                : const"     "\n"
-"continue             : continue"  "\n"
-"default              : default"   "\n"
-"do                   : do"        "\n"
-"double               : double"    "\n"
-"else                 : else"      "\n"
-"enum                 : enum"      "\n"
-"extern               : extern"    "\n"
-"float                : float"     "\n"
-"for                  : for"       "\n"
-"goto                 : goto"      "\n"
-"if                   : if"        "\n"
-"int                  : int"       "\n"
-"long                 : long"      "\n"
-"register             : register"  "\n"
-"return               : return"    "\n"
-"short                : short"     "\n"
-"signed               : signed"    "\n"
-"sizeof               : sizeof"    "\n"
-"static               : static"    "\n"
-"struct               : struct"    "\n"
-"switch               : switch"    "\n"
-"typedef              : typedef"   "\n"
-"union                : union"     "\n"
-"unsigned             : unsigned"  "\n"
-"void                 : void"      "\n"
-"volatile             : volatile"  "\n"
-"while                : while"     "\n"
-"identifier           : (\\l|\\u|_)(\\l|\\u|_|\\d)*" "\n"
-"langle_langle_equal  : <<="       "\n"
-"rangle_rangle_equal  : >>="       "\n"
-"dot_dot_dot          : \\.\\.\\." "\n"
-"ampasand_ampasand    : &&"        "\n"
-"ampasand_equal       : &="        "\n"
-"equal_equal          : =="        "\n"
-"exclamation_equal    : !="        "\n"
-"hat_equal            : ^="        "\n"
-"langle_equal         : <="        "\n"
-"langle_langle        : <<"        "\n"
-"minus_equal          : -="        "\n"
-"minus_minus          : --"        "\n"
-"minus_rangle         : ->"        "\n"
-"percent_equal        : %="        "\n"
-"pipe_equal           : \\|="      "\n"
-"pipe_pipe            : \\|\\|"    "\n"
-"plus_equal           : +="        "\n"
-"plus_plus            : ++"        "\n"
-"rangle_equal         : >="        "\n"
-"rangle_rangle        : >>"        "\n"
-"slash_equal          : /="        "\n"
-"star_equal           : \\*="      "\n"
-"ampasand             : &"         "\n"
-"colon                : :"         "\n"
-"comma                : ,"         "\n"
-"dot                  : \\."       "\n"
-"equal                : ="         "\n"
-"exclamation          : !"         "\n"
-"hat                  : ^"         "\n"
-"langle               : <"         "\n"
-"lbrace               : ["         "\n"
-"lbracket             : {"         "\n"
-"lparen               : \\("       "\n"
-"minus                : -"         "\n"
-"percent              : %"         "\n"
-"pipe                 : \\|"       "\n"
-"plus                 : +"         "\n"
-"question             : ?"         "\n"
-"rangle               : >"         "\n"
-"rbrace               : ]"         "\n"
-"rbracket             : }"         "\n"
-"rparen               : \\)"       "\n"
-"semicolon            : ;"         "\n"
-"slash                : /"         "\n"
-"star                 : \\*"       "\n"
-"tilda                : ~"         "\n"
+TYPEDEF_NAME         : __TO_DO_WORK_0__
+character_constant   : '(@|\\)(\l|\u|\d| |!|\@|#|$|%|^|&|\*|-|=|`|_|+|\||~|[|]|{|}|;|'|:|,|.|/|<|>|?)'
+enumeration_constant : __TO_DO_WORK_2__
+string               : "(\l|\u|_|\d| |%)*"
+skip                 : \s\s*
+floating_constant    : (0|(1|2|3|4|5|6|7|8|9)\d*)\.\d*
+integer_constant     : (0|(1|2|3|4|5|6|7|8|9)\d*)
+auto                 : auto
+break                : break
+case                 : case
+char                 : char
+const                : const
+continue             : continue
+default              : default
+do                   : do
+double               : double
+else                 : else
+enum                 : enum
+extern               : extern
+float                : float
+for                  : for
+goto                 : goto
+if                   : if
+int                  : int
+long                 : long
+register             : register
+return               : return
+short                : short
+signed               : signed
+sizeof               : sizeof
+static               : static
+struct               : struct
+switch               : switch
+typedef              : typedef
+union                : union
+unsigned             : unsigned
+void                 : void
+volatile             : volatile
+while                : while
+identifier           : (\l|\u|_)(\l|\u|_|\d)*
+langle_langle_equal  : <<=
+rangle_rangle_equal  : >>=
+dot_dot_dot          : \.\.\.
+ampasand_ampasand    : &&
+ampasand_equal       : &=
+equal_equal          : ==
+exclamation_equal    : !=
+hat_equal            : ^=
+langle_equal         : <=
+langle_langle        : <<
+minus_equal          : -=
+minus_minus          : --
+minus_rangle         : ->
+percent_equal        : %=
+pipe_equal           : \|=
+pipe_pipe            : \|\|
+plus_equal           : +=
+plus_plus            : ++
+rangle_equal         : >=
+rangle_rangle        : >>
+slash_equal          : /=
+star_equal           : \*=
+ampasand             : &
+colon                : :
+comma                : ,
+dot                  : \.
+equal                : =
+exclamation          : !
+hat                  : ^
+langle               : <
+lbrace               : [
+lbracket             : {
+lparen               : \(
+minus                : -
+percent              : %
+pipe                 : \|
+plus                 : +
+question             : ?
+rangle               : >
+rbrace               : ]
+rbracket             : }
+rparen               : \)
+semicolon            : ;
+slash                : /
+star                 : \*
+tilda                : ~
