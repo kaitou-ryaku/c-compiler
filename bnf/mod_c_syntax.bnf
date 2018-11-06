@@ -49,10 +49,10 @@ DECLARATION                :  DECLARATION_SPECIFIER DECLARATION_SPECIFIER * INIT
 INIT_DECLARATOR            : ( DECLARATOR | DECLARATOR equal INITIALIZER )
 INITIALIZER                : ( ASSIGNMENT_EXPRESSION | lbracket INITIALIZER_LIST rbracket | lbracket INITIALIZER_LIST comma rbracket )
 INITIALIZER_LIST           : INITIALIZER ( comma INITIALIZER ) *
-COMPOUND_STATEMENT         : lbracket DECLARATION * STATEMENT * rbracket
+COMPOUND_STATEMENT         : lbracket ( DECLARATION | STATEMENT ) * rbracket
 STATEMENT                  : ( LABELED_STATEMENT | EXPRESSION_STATEMENT | COMPOUND_STATEMENT | SELECTION_STATEMENT | ITERATION_STATEMENT | JUMP_STATEMENT )
 LABELED_STATEMENT          : ( identifier colon STATEMENT | case CONSTANT_EXPRESSION colon STATEMENT | default colon STATEMENT )
 EXPRESSION_STATEMENT       : ( @ | EXPRESSION ) semicolon
 SELECTION_STATEMENT        : ( if lparen EXPRESSION rparen STATEMENT | if lparen EXPRESSION rparen STATEMENT else STATEMENT | switch lparen EXPRESSION rparen STATEMENT )
-ITERATION_STATEMENT        : ( while lparen EXPRESSION rparen STATEMENT | do STATEMENT while lparen EXPRESSION rparen semicolon | for lparen ( @ | EXPRESSION ) semicolon ( @ | EXPRESSION ) semicolon ( @ | EXPRESSION ) rparen STATEMENT )
+ITERATION_STATEMENT        : ( while lparen EXPRESSION rparen STATEMENT | do STATEMENT while lparen EXPRESSION rparen semicolon | for lparen ( @ | EXPRESSION | DECLARATION ) semicolon ( @ | EXPRESSION ) semicolon ( @ | EXPRESSION ) rparen STATEMENT )
 JUMP_STATEMENT             : ( goto identifier semicolon | continue semicolon | break semicolon | return ( @ | EXPRESSION ) semicolon )
