@@ -14,6 +14,7 @@ int main(void) {
   static char pair_str[1000];
   static char source_str[100000];
   read_file("bnf/mod_c_lex.bnf"   , lex_str   , sizeof(lex_str)    / sizeof(char));
+  // read_file("bnf/kandr.bnf"       , syntax_str, sizeof(syntax_str) / sizeof(char));
   read_file("bnf/mod_c_syntax.bnf", syntax_str, sizeof(syntax_str) / sizeof(char));
   read_file("bnf/mod_c_pair.txt"  , pair_str  , sizeof(pair_str)   / sizeof(char));
   read_file("bnf/mod_c_source.txt", source_str, sizeof(source_str) / sizeof(char));
@@ -82,20 +83,20 @@ int main(void) {
   print_block(stderr, block, token);
 
   replace_typedef(stderr, block, token, bnf);
-  //print_token(stderr, bnf, token, token_size);
+  print_token(stderr, bnf, token, token_size);
 
   static PARSE_TREE pt[500000];
   static PARSE_MEMO memo[2000000]; // これがメモリを一番食う
   const int pt_size = parse_token_list(token, bnf, pair_bnf, pt, sizeof(pt)/sizeof(PARSE_TREE), memo, sizeof(memo)/sizeof(PARSE_MEMO));
 
-  fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
-  //print_parse_tree(stderr, pt_size, pt, bnf, token);
+  //fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
+  ////print_parse_tree(stderr, pt_size, pt, bnf, token);
 
-  //static SYMBOL symbol[10000];
-  //create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL));
+  static SYMBOL symbol[10000];
+  create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL));
 
-  //translate_pt_to_ast(pt, bnf);
-  //print_parse_tree(stderr, pt_size, pt, bnf, token);
+  translate_pt_to_ast(pt, bnf);
+  print_parse_tree(stderr, pt_size, pt, bnf, token);
 
   {
     FILE *fp;

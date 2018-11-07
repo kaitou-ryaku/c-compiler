@@ -88,7 +88,7 @@ static int register_pointer(
 );
 static void register_type(
   const   int symbol_empty_id
-  , const int declaration_specifier
+  , const int declaration_specifiers
   , const BNF* bnf
   , PARSE_TREE* pt
   , SYMBOL* symbol
@@ -260,7 +260,10 @@ static int create_symbol_variable_recursive(/*{{{*/
     const int up = pt[declaration].up;
     assert(pt[declaration].down >= 0);
 
-    const int init_declarator = search_pt_index_right("INIT_DECLARATOR", pt[declaration].down, pt, bnf);
+    const int init_declarator_list = search_pt_index_right("INIT_DECLARATOR_LIST", pt[declaration].down, pt, bnf);
+    assert(init_declarator_list >= 0);
+
+    const int init_declarator = search_pt_index_right("INIT_DECLARATOR", pt[init_declarator_list].down, pt, bnf);
     assert(init_declarator >= 0);
 
     const int declarator = search_pt_index_right("DECLARATOR", pt[init_declarator].down, pt, bnf);
@@ -364,10 +367,13 @@ static int register_declaration(/*{{{*/
   , PARSE_TREE* pt
   , SYMBOL* symbol
 ) {
-  int declaration_specifier = search_pt_index_right("DECLARATION_SPECIFIER", pt[declaration].down, pt, bnf);
-  assert(declaration_specifier >= 0);
+  int declaration_specifiers = search_pt_index_right("DECLARATION_SPECIFIERS", pt[declaration].down, pt, bnf);
+  assert(declaration_specifiers >= 0);
 
-  const int init_declarator = search_pt_index_right("INIT_DECLARATOR", pt[declaration].down, pt, bnf);
+  const int init_declarator_list = search_pt_index_right("INIT_DECLARATOR_LIST", pt[declaration].down, pt, bnf);
+  assert(init_declarator_list >= 0);
+
+  const int init_declarator = search_pt_index_right("INIT_DECLARATOR", pt[init_declarator_list].down, pt, bnf);
   assert(init_declarator >= 0);
 
   const int declarator = search_pt_index_right("DECLARATOR", pt[init_declarator].down, pt, bnf);
@@ -384,7 +390,7 @@ static int register_declaration(/*{{{*/
   symbol[symbol_empty_id].token_id = pt[identifier].token_begin_index;
   symbol[symbol_empty_id].kind = kind;
   symbol[symbol_empty_id].block = block_here;
-  register_type(symbol_empty_id, declaration_specifier, bnf, pt, symbol);
+  register_type(symbol_empty_id, declaration_specifiers, bnf, pt, symbol);
   register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
 
   return symbol_empty_id+1;
@@ -399,8 +405,8 @@ static int register_function(/*{{{*/
   , PARSE_TREE* pt
   , SYMBOL* symbol
 ) {
-  int declaration_specifier = search_pt_index_right("DECLARATION_SPECIFIER", pt[function_definition].down, pt, bnf);
-  assert(declaration_specifier >= 0);
+  int declaration_specifiers = search_pt_index_right("DECLARATION_SPECIFIERS", pt[function_definition].down, pt, bnf);
+  assert(declaration_specifiers >= 0);
 
   const int declarator = search_pt_index_right("DECLARATOR", pt[function_definition].down, pt, bnf);
   assert(declarator >= 0);
@@ -416,17 +422,17 @@ static int register_function(/*{{{*/
   symbol[symbol_empty_id].token_id = pt[identifier].token_begin_index;
   symbol[symbol_empty_id].kind = kind;
   symbol[symbol_empty_id].block = block_here;
-  register_type(symbol_empty_id, declaration_specifier, bnf, pt, symbol);
+  register_type(symbol_empty_id, declaration_specifiers, bnf, pt, symbol);
   register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
 
   return symbol_empty_id+1;
 }/*}}}*/
 static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE* pt) {/*{{{*/
   // 必ず存在するノード
-  int declaration_specifier = search_pt_index_right("DECLARATION_SPECIFIER", pt[declaration].down, pt, bnf);
-  assert(declaration_specifier >= 0);
+  const int init_declarator_list = search_pt_index_right("INIT_DECLARATOR_LIST", pt[declaration].down, pt, bnf);
+  assert(init_declarator_list >= 0);
 
-  const int init_declarator = search_pt_index_right("INIT_DECLARATOR", pt[declaration].down, pt, bnf);
+  const int init_declarator = search_pt_index_right("INIT_DECLARATOR", pt[init_declarator_list].down, pt, bnf);
   assert(init_declarator >= 0);
 
   const int declarator = search_pt_index_right("DECLARATOR", pt[init_declarator].down, pt, bnf);
@@ -568,8 +574,8 @@ static int register_parameter_declaration(/*{{{*/
   , SYMBOL* symbol
 ) {
 
-  int declaration_specifier = search_pt_index_right("DECLARATION_SPECIFIER", pt[parameter_declaration].down, pt, bnf);
-  assert(declaration_specifier >= 0);
+  int declaration_specifiers = search_pt_index_right("DECLARATION_SPECIFIERS", pt[parameter_declaration].down, pt, bnf);
+  assert(declaration_specifiers >= 0);
 
   const int declarator = search_pt_index_right("DECLARATOR", pt[parameter_declaration].down, pt, bnf);
 
@@ -591,25 +597,21 @@ static int register_parameter_declaration(/*{{{*/
   symbol[symbol_empty_id].block = block_here;
   symbol[symbol_empty_id].function_id = function_id;
   symbol[symbol_empty_id].argument_id = argument_id;
-  register_type(symbol_empty_id, declaration_specifier, bnf, pt, symbol);
+  register_type(symbol_empty_id, declaration_specifiers, bnf, pt, symbol);
 
   return symbol_empty_id+1;
 }/*}}}*/
 static void register_type(/*{{{*/
   const   int symbol_empty_id
-  , const int declaration_specifier
+  , const int declaration_specifiers
   , const BNF* bnf
   , PARSE_TREE* pt
   , SYMBOL* symbol
 ) {
-  int tmp_declaration_specifier = declaration_specifier;
+  int specifier = pt[declaration_specifiers].down;
 
-  while (tmp_declaration_specifier >= 0) {
-    if (!is_pt_name("DECLARATION_SPECIFIER", pt[tmp_declaration_specifier], bnf)) break;
-
-    const int specifier = pt[tmp_declaration_specifier].down;
-    assert(specifier >= 0);
-    const int keyword = pt[pt[tmp_declaration_specifier].down].down;
+  while (specifier >= 0) {
+    const int keyword = pt[specifier].down;
     assert(keyword >= 0);
 
     if (is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
@@ -625,7 +627,7 @@ static void register_type(/*{{{*/
       symbol[symbol_empty_id].qualify = pt[keyword].bnf_id;
     }
 
-    tmp_declaration_specifier = pt[tmp_declaration_specifier].right;
+    specifier = pt[specifier].right;
   }
 }/*}}}*/
 static int register_pointer(/*{{{*/
