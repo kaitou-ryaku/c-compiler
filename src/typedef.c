@@ -9,11 +9,13 @@
 //関数プロトタイプ/*{{{*/
 int replace_typedef_declare(FILE* fp, LEX_TOKEN* token, const BNF* bnf);
 void replace_typedef_use(const BLOCK* block, LEX_TOKEN* token, const BNF* bnf);
+void undo_replace_typedef_declare(LEX_TOKEN* token, const BNF* bnf);
 /*}}}*/
 void replace_typedef(FILE* fp, const BLOCK* block, LEX_TOKEN* token, const BNF* bnf) {/*{{{*/
   const int typedef_count = replace_typedef_declare(fp, token, bnf);
   fprintf(stderr, "Typedef is total %d\n", typedef_count);
   replace_typedef_use(block, token, bnf);
+  undo_replace_typedef_declare(token, bnf);
 }/*}}}*/
 int replace_typedef_declare(FILE* fp, LEX_TOKEN* token, const BNF* bnf) {/*{{{*/
   // BNFのLEXのtypedef_nameに対応するindexを取得
@@ -108,6 +110,39 @@ void replace_typedef_use(const BLOCK* block, LEX_TOKEN* token, const BNF* bnf) {
           if (up_seek_index < 0) break;
         }
       }
+    }
+  }
+}/*}}}*/
+void undo_replace_typedef_declare(LEX_TOKEN* token, const BNF* bnf) {/*{{{*/
+  // BNFのLEXのtypedef_nameに対応するindexを取得
+  int index_typedef_name = 0;
+  while (index_typedef_name >= 0) {
+    if (strcmp(bnf[index_typedef_name].name, "typedef_name") == 0) break;
+    index_typedef_name = search_bnf_next_lex(index_typedef_name, bnf);
+  }
+  assert(index_typedef_name >= 0);
+
+  // BNFのLEXのidentifierに対応するindexを取得
+  int index_identifier = 0;
+  while (index_identifier >= 0) {
+    if (strcmp(bnf[index_identifier].name, "identifier") == 0) break;
+    index_identifier = search_bnf_next_lex(index_identifier, bnf);
+  }
+  assert(index_identifier >= 0);
+
+  bool typedef_name_wait = false;
+  for (int i=0; i<token[0].used_size; i++) {
+
+    // typedefを発見 -> typedef_name_wait をgrueにする
+    if (is_token_kind("typedef", token[i], bnf)) {
+      assert(!typedef_name_wait);
+      typedef_name_wait = true;
+    }
+
+    // typedefの後の非構造体で;が現れた -> その前のトークンが型名エイリアス
+    else if (typedef_name_wait == true && is_token_kind("typedef_name", token[i], bnf)) {
+      token[i].kind = index_identifier;
+      typedef_name_wait = false;
     }
   }
 }/*}}}*/
