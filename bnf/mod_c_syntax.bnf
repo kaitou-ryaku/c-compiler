@@ -19,7 +19,7 @@ ENUM_SPECIFIER             : enum ( identifier | lbracket ENUMERATOR_LIST rbrack
 ENUMERATOR_LIST            : ENUMERATOR ( comma ENUMERATOR ) *
 ENUMERATOR                 : identifier ( @ | equal CONSTANT_EXPRESSION )
 DECLARATOR                 : ( @ | POINTER ) DIRECT_DECLARATOR
-DIRECT_DECLARATOR          : ( identifier | lparen DECLARATOR rparen ) ( lbrace ( @ | CONSTANT_EXPRESSION ) rbrace | lparen ( @ | PARAMETER_TYPE_LIST | IDENTIFIER_LIST ) rparen ) *
+DIRECT_DECLARATOR          : ( identifier | lparen DECLARATOR rparen ) ( lbrace ( @ | integer_constant ) rbrace | lparen ( @ | PARAMETER_TYPE_LIST | IDENTIFIER_LIST ) rparen ) *
 POINTER                    : star ( @ | TYPE_QUALIFIER_LIST ) ( @ | POINTER )
 TYPE_QUALIFIER_LIST        : TYPE_QUALIFIER TYPE_QUALIFIER *
 PARAMETER_TYPE_LIST        : PARAMETER_LIST ( @ | comma dot_dot_dot )

@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 const int SYMBOL_TABLE_UNUSED     = -1;
 const int SYMBOL_TABLE_VARIABLE   = 0;
@@ -86,6 +87,14 @@ static int register_pointer(
   , PARSE_TREE* pt
   , SYMBOL* symbol
 );
+static int register_array(
+  const   int symbol_empty_id
+  , const int lbrace
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+);
 static void register_type(
   const   int symbol_empty_id
   , const int declaration_specifiers
@@ -128,6 +137,7 @@ static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, i
   for (int i=0; i<symbol_max_size; i++) {
     symbol[i].id         = i;
     symbol[i].total_size = symbol_max_size;
+    symbol[i].total_array_size = array_max_size;
     initialize_symbol_table_unit(symbol, i, array);
   }
 }/*}}}*/
@@ -394,11 +404,14 @@ static int register_declaration(/*{{{*/
 
   const int pointer = search_pt_index_right("POINTER", pt[declarator].down, pt, bnf);
 
+  const int lbrace = search_pt_index_right("lbrace", identifier, pt, bnf);
+
   symbol[symbol_empty_id].token_id = pt[identifier].token_begin_index;
   symbol[symbol_empty_id].kind = kind;
   symbol[symbol_empty_id].block = block_here;
   register_type(symbol_empty_id, declaration_specifiers, bnf, pt, symbol);
   register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
+  register_array(symbol_empty_id, lbrace, token, bnf, pt, symbol);
 
   return symbol_empty_id+1;
 }/*}}}*/
@@ -492,7 +505,7 @@ static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE
   }
 }/*}}}*/
 static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol) {/*{{{*/
-  fprintf(fp, "id:%03d ", symbol[line].id);
+  fprintf(fp, "%03d | ", symbol[line].id);
 
   if (symbol[line].kind == -1) fprintf(fp, "UNUSED     ");
   if (symbol[line].kind == 0 ) fprintf(fp, "VARIABLE   ");
@@ -501,33 +514,53 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   if (symbol[line].kind == 3 ) fprintf(fp, "PROTOTYPE  ");
   if (symbol[line].kind == 4 ) fprintf(fp, "P_ARGUMENT ");
 
+  fprintf(fp, "| ");
+  if (symbol[line].storage >= 0) fprintf(fp, "%-8s", bnf[symbol[line].storage].name);
+  else fprintf(fp, "        ");
+
+  fprintf(fp, "| ");
+  if (symbol[line].qualify >= 0) fprintf(fp, "%-8s", bnf[symbol[line].qualify].name);
+  else fprintf(fp, "        ");
+
+  fprintf(fp, "| ");
+  if (symbol[line].type >= 0) fprintf(fp, "%-8s", bnf[symbol[line].type].name);
+  else fprintf(fp, "        ");
+
+  fprintf(fp, "| ");
+  int rest = 5;
+  for (int i=0; i<symbol[line].pointer; i++) {
+    rest -= fprintf(fp, "*");
+  }
+  for (int i=0; i<rest; i++) fprintf(fp, " ");
+
+  fprintf(fp, "| ");
+  if (symbol[line].pointer_qualify >= 0) fprintf(fp, "%-8s", bnf[symbol[line].pointer_qualify].name);
+  else fprintf(fp, "        ");
+
+  fprintf(fp, "| ");
   const int token_id = symbol[line].token_id;
-  int rest = 15;
+  rest = 15;
   if (token_id >= 0) {
     for (int i=token[token_id].begin; i<token[token_id].end; i++) {
       fprintf(fp, "%c", token[0].src[i]);
       rest--;
     }
-    for (int i=0; i<rest; i++) {
-      fprintf(fp, " ");
-    }
+    for (int i=0; i<rest; i++) fprintf(fp, " ");
   } else {
-    fprintf(fp, "-------------- ");
+    fprintf(fp, "               ");
   }
 
-  if (symbol[line].type >= 0) fprintf(fp, "%10s ", bnf[symbol[line].type].name);
-  else fprintf(fp, "           ");
-
-  if (symbol[line].storage >= 0) fprintf(fp, "%10s ", bnf[symbol[line].storage].name);
-  else fprintf(fp, "           ");
-
-  if (symbol[line].qualify >= 0) fprintf(fp, "%10s ", bnf[symbol[line].qualify].name);
-  else fprintf(fp, "           ");
-
-  fprintf(fp, "pointer:%3d ", symbol[line].pointer);
-
-  if (symbol[line].pointer_qualify >= 0) fprintf(fp, "%10s ", bnf[symbol[line].pointer_qualify].name);
-  else fprintf(fp, "           ");
+  fprintf(fp, "| ");
+  rest = 15;
+  for (int i=symbol[line].array_begin; i<symbol[line].array_end; i++) {
+    const int size = symbol[line].array[i];
+    if (size == -2) {
+      rest -= fprintf(fp, "[]");
+    } else {
+      rest -= fprintf(fp, "[%d]", size);
+    }
+  }
+  for (int i=0; i<rest; i++) fprintf(fp, " ");
 
   fprintf(fp, "block:%3d ", symbol[line].block);
   fprintf(fp, "addr:%3d ", symbol[line].addr);
@@ -660,6 +693,80 @@ static int register_pointer(/*{{{*/
   symbol[symbol_empty_id].pointer = pointer_depth;
 
   return pointer_depth;
+}/*}}}*/
+static int register_array(/*{{{*/
+  const   int symbol_empty_id
+  , const int lbrace
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+
+  // int a[5][6][7];
+  // array_begin_id = 100
+  // array_end_id   = 103
+  // symbol[0].array = symbol[1].array = ... = symbol[symbol_empty_id].array
+  // symbol[0].array[100] = 5
+  // symbol[0].array[101] = 6
+  // symbol[0].array[102] = 7
+  // symbol[0].array[103] = -1
+  // symbol[0].array[104] = -1
+  //
+  // int a[][];
+  // array_begin_id = 100
+  // array_end_id   = 102
+  // symbol[0].array[100] = -2
+  // symbol[0].array[101] = -2
+  // symbol[0].array[102] = -1
+  // symbol[0].array[103] = -1
+  //
+  // int a;
+  // array_begin_id = 100
+  // array_end_id   = 100
+  // symbol[0].array[100] = -1
+
+  int array_empty_id;
+  for (array_empty_id=0; array_empty_id<symbol[symbol_empty_id].total_array_size; array_empty_id++) {
+    if (symbol[symbol_empty_id].array[array_empty_id] == -1) {
+      // 配列が存在しない場合の設定
+      symbol[symbol_empty_id].array_begin = array_empty_id;
+      symbol[symbol_empty_id].array_end   = array_empty_id;
+      break;
+    }
+  }
+  assert(array_empty_id < symbol[0].total_array_size);
+
+  int tmp_lbrace = lbrace;
+
+  while (tmp_lbrace >= 0) {
+    const int right = pt[tmp_lbrace].right;
+
+    if (       is_pt_name("rbrace"  , pt[right], bnf)) {
+      symbol[symbol_empty_id].array[array_empty_id] = -2;
+
+    } else if (is_pt_name("integer_constant"  , pt[right], bnf)) {
+      const LEX_TOKEN t = token[pt[right].token_begin_index];
+      char str[100];
+      int str_length;
+      for (str_length=0; str_length<t.end-t.begin; str_length++) {
+        str[str_length] = t.src[t.begin+str_length];
+      }
+      str[str_length] = '\0';
+      const int str_int = atoi(str);
+      assert(str_int > 0);
+      symbol[symbol_empty_id].array[array_empty_id] = str_int;
+
+    } else {
+      assert(0);
+    }
+
+    array_empty_id++;
+    symbol[symbol_empty_id].array_end = array_empty_id;
+    tmp_lbrace = search_pt_index_right("lbrace", pt[tmp_lbrace].right, pt, bnf);
+  }
+
+  return array_empty_id;
 }/*}}}*/
 static int register_parameter_type_list(/*{{{*/
   const int  kind

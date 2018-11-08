@@ -19,6 +19,7 @@ typedef struct {
   int*  array;
   int   array_begin;
   int   array_end;
+  int   total_array_size;
   int   size;    // char:1 int:4
   int   function_id;  // 引数の場合、親関数のidを入れる
   int   argument_id;  // 引数の場合、何番目の引数か入れる
