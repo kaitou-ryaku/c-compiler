@@ -536,7 +536,10 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   else fprintf(fp, "        ");
 
   fprintf(fp, "| ");
-  if (symbol[line].type >= 0) fprintf(fp, "%-8s", bnf[symbol[line].type].name);
+  if (symbol[line].type >= 0) {
+    if (0==strcmp("typedef_name", bnf[symbol[line].type].name)) fprintf(fp, "%-8s", "TYPEDEF");
+    else fprintf(fp, "%-8s", bnf[symbol[line].type].name);
+  }
   else fprintf(fp, "        ");
 
   fprintf(fp, "| ");
