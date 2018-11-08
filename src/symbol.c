@@ -304,6 +304,14 @@ static int create_symbol_variable_recursive(/*{{{*/
       assert(0);
     }
 
+    // for文の最初の部分で宣言できるように独自拡張した
+    else if (is_pt_name("ITERATION_STATEMENT", pt[up], bnf)) {
+      const int for_compound_statement = search_pt_index_right("STATEMENT", declaration, pt, bnf);
+      assert(for_compound_statement >= 0);
+      new_symbol_empty_id = register_declaration(SYMBOL_TABLE_VARIABLE, symbol_empty_id, declaration, block[pt[for_compound_statement].token_begin_index].here, token, bnf, pt, symbol);
+      delete_declaration(declaration, bnf, pt);
+    }
+
     // 関数プロトタイプ宣言、グローバル変数のいずれか
     else if (is_pt_name("EXTERNAL_DECLARATION", pt[up], bnf)) {
 

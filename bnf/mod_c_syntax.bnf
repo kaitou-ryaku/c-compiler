@@ -36,7 +36,7 @@ LABELED_STATEMENT          : ( identifier | case CONSTANT_EXPRESSION | default )
 EXPRESSION_STATEMENT       : ( @ | EXPRESSION ) semicolon
 COMPOUND_STATEMENT         : lbracket ( DECLARATION | STATEMENT ) * rbracket
 SELECTION_STATEMENT        : ( if lparen EXPRESSION rparen STATEMENT ( @ | else STATEMENT ) | switch lparen EXPRESSION rparen STATEMENT )
-ITERATION_STATEMENT        : ( while lparen EXPRESSION rparen STATEMENT | do STATEMENT while lparen EXPRESSION rparen semicolon | for lparen ( @ | EXPRESSION ) semicolon ( @ | EXPRESSION ) semicolon ( @ | EXPRESSION ) rparen STATEMENT )
+ITERATION_STATEMENT        : ( while lparen EXPRESSION rparen STATEMENT | do STATEMENT while lparen EXPRESSION rparen semicolon | for lparen ( semicolon | EXPRESSION semicolon | DECLARATION ) ( @ | EXPRESSION ) semicolon ( @ | EXPRESSION ) rparen STATEMENT )
 JUMP_STATEMENT             : ( goto identifier | continue | break | return | return EXPRESSION ) semicolon
 EXPRESSION                 : ASSIGNMENT_EXPRESSION ( comma ASSIGNMENT_EXPRESSION ) *
 ASSIGNMENT_EXPRESSION      : ( CONDITIONAL_EXPRESSION | UNARY_EXPRESSION ASSIGNMENT_OPERATOR ASSIGNMENT_EXPRESSION )
