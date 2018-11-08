@@ -507,14 +507,27 @@ static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE
 static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol) {/*{{{*/
   fprintf(fp, "%03d | ", symbol[line].id);
 
-  if (symbol[line].kind == -1) fprintf(fp, "UNUSED     ");
-  if (symbol[line].kind == 0 ) fprintf(fp, "VARIABLE   ");
-  if (symbol[line].kind == 1 ) fprintf(fp, "FUNCTION   ");
-  if (symbol[line].kind == 2 ) fprintf(fp, "F_ARGUMENT ");
-  if (symbol[line].kind == 3 ) fprintf(fp, "PROTOTYPE  ");
-  if (symbol[line].kind == 4 ) fprintf(fp, "P_ARGUMENT ");
-
+  const int token_id = symbol[line].token_id;
+  int rest = 15;
+  if (token_id >= 0) {
+    for (int i=token[token_id].begin; i<token[token_id].end; i++) {
+      fprintf(fp, "%c", token[0].src[i]);
+      rest--;
+    }
+    for (int i=0; i<rest; i++) fprintf(fp, " ");
+  } else {
+    fprintf(fp, "               ");
+  }
   fprintf(fp, "| ");
+
+  if (symbol[line].kind == -1) fprintf(fp, "UNUSED         ");
+  if (symbol[line].kind == 0 ) fprintf(fp, "VAR  {%2d}    ", symbol[line].block);
+  if (symbol[line].kind == 1 ) fprintf(fp, "FUNC %03d(%d){}", symbol[line].id, symbol[line].total_argument);
+  if (symbol[line].kind == 2 ) fprintf(fp, "ARG  %03d(%d){}", symbol[line].function_id, symbol[line].argument_id);
+  if (symbol[line].kind == 3 ) fprintf(fp, "PROT %03d(%d); ", symbol[line].id, symbol[line].total_argument);
+  if (symbol[line].kind == 4 ) fprintf(fp, "ARG  %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
+
+  fprintf(fp, " | ");
   if (symbol[line].storage >= 0) fprintf(fp, "%-8s", bnf[symbol[line].storage].name);
   else fprintf(fp, "        ");
 
@@ -527,7 +540,7 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   else fprintf(fp, "        ");
 
   fprintf(fp, "| ");
-  int rest = 5;
+  rest = 5;
   for (int i=0; i<symbol[line].pointer; i++) {
     rest -= fprintf(fp, "*");
   }
@@ -536,19 +549,6 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   fprintf(fp, "| ");
   if (symbol[line].pointer_qualify >= 0) fprintf(fp, "%-8s", bnf[symbol[line].pointer_qualify].name);
   else fprintf(fp, "        ");
-
-  fprintf(fp, "| ");
-  const int token_id = symbol[line].token_id;
-  rest = 15;
-  if (token_id >= 0) {
-    for (int i=token[token_id].begin; i<token[token_id].end; i++) {
-      fprintf(fp, "%c", token[0].src[i]);
-      rest--;
-    }
-    for (int i=0; i<rest; i++) fprintf(fp, " ");
-  } else {
-    fprintf(fp, "               ");
-  }
 
   fprintf(fp, "| ");
   rest = 15;
@@ -565,9 +565,6 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   fprintf(fp, "block:%3d ", symbol[line].block);
   fprintf(fp, "addr:%3d ", symbol[line].addr);
   fprintf(fp, "size:%3d ", symbol[line].size);
-  fprintf(fp, "func:%3d ", symbol[line].function_id);
-  fprintf(fp, "arg:%3d ", symbol[line].argument_id);
-  fprintf(fp, "arg_tot:%3d ", symbol[line].total_argument);
 }/*}}}*/
 static bool delete_pt_recursive(const int index, PARSE_TREE* pt) {/*{{{*/
   bool ret;
