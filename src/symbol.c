@@ -15,8 +15,8 @@ const int SYMBOL_TABLE_PROTOTYPE  = 3;
 const int SYMBOL_TABLE_P_ARGUMENT = 4;
 
 // 関数プロトタイプ/*{{{*/
-static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size);
-static void initialize_symbol_table_unit(SYMBOL* symbol, const int index);
+static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_size);
+static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* array);
 static int cretae_block_recursive(
  const   int        token_begin_index
  , const int        token_end_index
@@ -106,8 +106,8 @@ static int register_parameter_type_list(
 );
 void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt);
 /*}}}*/
-extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
-  initialize_symbol_table(symbol, symbol_max_size);
+extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
+  initialize_symbol_table(symbol, symbol_max_size, array, array_max_size);
 
   int empty_symbol_id = 0;
   empty_symbol_id = create_symbol_function_recursive(empty_symbol_id, block, token, bnf, pt, symbol);
@@ -120,14 +120,18 @@ extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const
   }
   return 0;
 }/*}}}*/
-static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size) {/*{{{*/
+static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
+  for (int i=0; i<array_max_size; i++) {
+    array[i] = -1;
+  }
+
   for (int i=0; i<symbol_max_size; i++) {
     symbol[i].id         = i;
     symbol[i].total_size = symbol_max_size;
-    initialize_symbol_table_unit(symbol, i);
+    initialize_symbol_table_unit(symbol, i, array);
   }
 }/*}}}*/
-static void initialize_symbol_table_unit(SYMBOL* symbol, const int index) {/*{{{*/
+static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* array) {/*{{{*/
   symbol[index].used_size       = 0;
   symbol[index].token_id        = -1;
   symbol[index].kind            = SYMBOL_TABLE_UNUSED;
@@ -138,6 +142,9 @@ static void initialize_symbol_table_unit(SYMBOL* symbol, const int index) {/*{{{
   symbol[index].block           = -1;
   symbol[index].addr            = -1;
   symbol[index].pointer         = -1;
+  symbol[index].array           = array;
+  symbol[index].array_begin     = -1;
+  symbol[index].array_end       = -1;
   symbol[index].size            = -1;
   symbol[index].function_id     = -1;
   symbol[index].argument_id     = -1;
@@ -715,7 +722,7 @@ static int register_parameter_type_list(/*{{{*/
       // voidの場合
       const int type_id = symbol[new_symbol_empty_id].type;
       if ((type_id < 0) || (0 == strcmp("void", bnf[type_id].name))) {
-        initialize_symbol_table_unit(symbol, new_symbol_empty_id);
+        initialize_symbol_table_unit(symbol, new_symbol_empty_id, symbol[0].array);
 
       // int等の場合
       } else {

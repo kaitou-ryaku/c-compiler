@@ -16,6 +16,9 @@ typedef struct {
   int   block; // ローカル変数なら属する{}, 関数定義の引数なら関数の{}, 関数プロトタイプの引数なら0
   int   addr;
   int   pointer; // 0:int a; 1:int *a; 2:int **a;
+  int*  array;
+  int   array_begin;
+  int   array_end;
   int   size;    // char:1 int:4
   int   function_id;  // 引数の場合、親関数のidを入れる
   int   argument_id;  // 引数の場合、何番目の引数か入れる

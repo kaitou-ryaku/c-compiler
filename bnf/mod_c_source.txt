@@ -1,8 +1,8 @@
 static char* func1(void);
 
-static int func2(int x, const int* const y) {
-  static const int** const a = b+c;
+static int func2(int x[3], const int* const y[4][5]) {
+  static const int** const a[6][7][8] = b[9]+c[10][11];
 }
 
-int a;
-int b = c;
+int a[12];
+int b[13] = {0};
