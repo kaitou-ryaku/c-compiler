@@ -1,5 +1,4 @@
 #include "../min-bnf-parser/include/min-bnf-parser.h"
-#include "../include/parse_tree.h"
 #include "../include/ast.h"
 #include "../include/common.h"
 #include "../include/symbol.h"
