@@ -88,15 +88,15 @@ int main(void) {
   static PARSE_MEMO memo[2000000]; // これがメモリを一番食う
   const int pt_size = parse_token_list(token, bnf, pair_bnf, pt, sizeof(pt)/sizeof(PARSE_TREE), memo, sizeof(memo)/sizeof(PARSE_MEMO));
 
-  fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
-  //print_parse_tree(stderr, pt_size, pt, bnf, token);
+  //fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
+  ////print_parse_tree(stderr, pt_size, pt, bnf, token);
 
-  static SYMBOL symbol[10000];
-  static int array[10000];
-  create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL), array, sizeof(array)/sizeof(int));
+  //static SYMBOL symbol[10000];
+  //static int array[10000];
+  //create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL), array, sizeof(array)/sizeof(int));
 
-  //translate_pt_to_ast(pt, bnf);
-  //print_parse_tree(stderr, pt_size, pt, bnf, token);
+  ////translate_pt_to_ast(pt, bnf);
+  ////print_parse_tree(stderr, pt_size, pt, bnf, token);
 
   {
     FILE *fp;
