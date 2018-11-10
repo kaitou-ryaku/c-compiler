@@ -80,21 +80,6 @@ static int register_parameter_declaration(
   , PARSE_TREE* pt
   , SYMBOL* symbol
 );
-static int register_pointer(
-  const   int symbol_empty_id
-  , const int pointer
-  , const BNF* bnf
-  , PARSE_TREE* pt
-  , SYMBOL* symbol
-);
-static int register_array(
-  const   int symbol_empty_id
-  , const int lbrace
-  , const LEX_TOKEN* token
-  , const BNF* bnf
-  , PARSE_TREE* pt
-  , SYMBOL* symbol
-);
 static void register_type(
   const   int symbol_empty_id
   , const int declaration_specifiers
@@ -114,6 +99,30 @@ static int register_parameter_type_list(
   , SYMBOL* symbol
 );
 void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt);
+static int get_new_array_index(const int* array, const int array_max_size);
+static void register_declarator(
+  const   int symbol_empty_id
+  , const int declarator
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+);
+static void register_direct_declarator(
+  const   int symbol_empty_id
+  , const int direct_declarator
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+);
+static void register_pointer(
+  const   int symbol_empty_id
+  , const int pointer
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+);
 /*}}}*/
 extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
   initialize_symbol_table(symbol, symbol_max_size, array, array_max_size);
@@ -127,6 +136,7 @@ extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const
     print_symbol_table_line(stderr, i, token, bnf, symbol);
     fprintf(stderr, "\n");
   }
+
   return 0;
 }/*}}}*/
 static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
@@ -148,13 +158,10 @@ static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* a
   symbol[index].type            = -1;
   symbol[index].storage         = -1;
   symbol[index].qualify         = -1;
-  symbol[index].pointer_qualify = -1;
   symbol[index].block           = -1;
   symbol[index].addr            = -1;
-  symbol[index].pointer         = -1;
   symbol[index].array           = array;
-  symbol[index].array_begin     = -1;
-  symbol[index].array_end       = -1;
+  symbol[index].array_size      = -1;
   symbol[index].size            = -1;
   symbol[index].function_id     = -1;
   symbol[index].argument_id     = -1;
@@ -289,9 +296,6 @@ static int create_symbol_variable_recursive(/*{{{*/
     const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
     assert(direct_declarator >= 0);
 
-    const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
-    assert(identifier >= 0);
-
     // 関数定義ブロック内の変数宣言
     if (is_pt_name("COMPOUND_STATEMENT", pt[up], bnf)) {
       new_symbol_empty_id = register_declaration(SYMBOL_TABLE_VARIABLE, symbol_empty_id, declaration, block[pt[up].token_begin_index].here, token, bnf, pt, symbol);
@@ -314,8 +318,10 @@ static int create_symbol_variable_recursive(/*{{{*/
 
     // 関数プロトタイプ宣言、グローバル変数のいずれか
     else if (is_pt_name("EXTERNAL_DECLARATION", pt[up], bnf)) {
+      const int down = pt[direct_declarator].down;
+      assert(down >= 0);
+      const int rparen = search_pt_index_right("rparen", down, pt, bnf);
 
-      const int rparen = search_pt_index_right("rparen", identifier, pt, bnf);
       // 関数プロトタイプ宣言
       if (rparen >= 0) {
         new_symbol_empty_id = register_declaration(SYMBOL_TABLE_PROTOTYPE, symbol_empty_id, declaration, 0, token, bnf, pt, symbol);
@@ -325,13 +331,13 @@ static int create_symbol_variable_recursive(/*{{{*/
         const int parameter_type_list = search_pt_index_right("PARAMETER_TYPE_LIST", pt[direct_declarator].down, pt, bnf);
         new_symbol_empty_id = register_parameter_type_list(SYMBOL_TABLE_P_ARGUMENT, prototype_id, new_symbol_empty_id, parameter_type_list, block, token, bnf, pt, symbol);
 
-        delete_declaration(declaration, bnf, pt);
+        //delete_declaration(declaration, bnf, pt);
       }
 
       // グローバル変数
       else {
         new_symbol_empty_id = register_declaration(SYMBOL_TABLE_VARIABLE, symbol_empty_id, declaration, 0, token, bnf, pt, symbol);
-        delete_declaration(declaration, bnf, pt);
+        //delete_declaration(declaration, bnf, pt);
       }
     }
 
@@ -404,22 +410,17 @@ static int register_declaration(/*{{{*/
   const int declarator = search_pt_index_right("DECLARATOR", pt[init_declarator].down, pt, bnf);
   assert(declarator >= 0);
 
-  const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
-  assert(direct_declarator >= 0);
-
-  const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
-  assert(identifier >= 0);
-
-  const int pointer = search_pt_index_right("POINTER", pt[declarator].down, pt, bnf);
-
-  const int lbrace = search_pt_index_right("lbrace", identifier, pt, bnf);
-
-  symbol[symbol_empty_id].token_id = pt[identifier].token_begin_index;
   symbol[symbol_empty_id].kind = kind;
   symbol[symbol_empty_id].block = block_here;
   register_type(symbol_empty_id, declaration_specifiers, bnf, pt, symbol);
-  register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
-  register_array(symbol_empty_id, lbrace, token, bnf, pt, symbol);
+
+  const int array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
+  symbol[symbol_empty_id].array = &(symbol[0].array[array_index]);
+  register_declarator(symbol_empty_id, declarator, token, bnf, pt, symbol);
+  const int registered_array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
+  symbol[symbol_empty_id].array_size = registered_array_index - array_index;
+  // register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
+  // register_array(symbol_empty_id, lbrace, token, bnf, pt, symbol);
 
   return symbol_empty_id+1;
 }/*}}}*/
@@ -469,6 +470,7 @@ static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE
   const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
   assert(direct_declarator >= 0);
 
+  //TODO ネストの場合も考慮し、DIRECT_DECLARATOR直下のidentifierを探す
   const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
   assert(identifier >= 0);
 
@@ -551,22 +553,13 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   else fprintf(fp, "        ");
 
   fprintf(fp, "| ");
-  rest = 5;
-  for (int i=0; i<symbol[line].pointer; i++) {
-    rest -= fprintf(fp, "*");
-  }
-  for (int i=0; i<rest; i++) fprintf(fp, " ");
-
-  fprintf(fp, "| ");
-  if (symbol[line].pointer_qualify >= 0) fprintf(fp, "%-8s", bnf[symbol[line].pointer_qualify].name);
-  else fprintf(fp, "        ");
-
-  fprintf(fp, "| ");
   rest = 15;
-  for (int i=symbol[line].array_begin; i<symbol[line].array_end; i++) {
+  for (int i=0; i<symbol[line].array_size; i++) {
     const int size = symbol[line].array[i];
     if (size == -2) {
       rest -= fprintf(fp, "[]");
+    } else if (size == 0) {
+      rest -= fprintf(fp, "*");
     } else {
       rest -= fprintf(fp, "[%d]", size);
     }
@@ -678,104 +671,104 @@ static void register_type(/*{{{*/
     specifier = pt[specifier].right;
   }
 }/*}}}*/
-static int register_pointer(/*{{{*/
-  const   int symbol_empty_id
-  , const int pointer
-  , const BNF* bnf
-  , PARSE_TREE* pt
-  , SYMBOL* symbol
-) {
-
-  int tmp_pointer = pointer;
-  int pointer_depth = 0;
-  while (tmp_pointer >= 0) {
-    if ( is_pt_name("star"    , pt[pt[tmp_pointer].down], bnf)) pointer_depth++;
-    if ( is_pt_name("const"   , pt[pt[tmp_pointer].down], bnf)
-      || is_pt_name("volatile", pt[pt[tmp_pointer].down], bnf)
-    ) {
-      symbol[symbol_empty_id].pointer_qualify = pt[pt[tmp_pointer].down].bnf_id;
-    }
-
-    tmp_pointer = pt[pt[tmp_pointer].down].right;
-  }
-  symbol[symbol_empty_id].pointer = pointer_depth;
-
-  return pointer_depth;
-}/*}}}*/
-static int register_array(/*{{{*/
-  const   int symbol_empty_id
-  , const int lbrace
-  , const LEX_TOKEN* token
-  , const BNF* bnf
-  , PARSE_TREE* pt
-  , SYMBOL* symbol
-) {
-
-  // int a[5][6][7];
-  // array_begin_id = 100
-  // array_end_id   = 103
-  // symbol[0].array = symbol[1].array = ... = symbol[symbol_empty_id].array
-  // symbol[0].array[100] = 5
-  // symbol[0].array[101] = 6
-  // symbol[0].array[102] = 7
-  // symbol[0].array[103] = -1
-  // symbol[0].array[104] = -1
-  //
-  // int a[][];
-  // array_begin_id = 100
-  // array_end_id   = 102
-  // symbol[0].array[100] = -2
-  // symbol[0].array[101] = -2
-  // symbol[0].array[102] = -1
-  // symbol[0].array[103] = -1
-  //
-  // int a;
-  // array_begin_id = 100
-  // array_end_id   = 100
-  // symbol[0].array[100] = -1
-
-  int array_empty_id;
-  for (array_empty_id=0; array_empty_id<symbol[symbol_empty_id].total_array_size; array_empty_id++) {
-    if (symbol[symbol_empty_id].array[array_empty_id] == -1) {
-      // 配列が存在しない場合の設定
-      symbol[symbol_empty_id].array_begin = array_empty_id;
-      symbol[symbol_empty_id].array_end   = array_empty_id;
-      break;
-    }
-  }
-  assert(array_empty_id < symbol[0].total_array_size);
-
-  int tmp_lbrace = lbrace;
-
-  while (tmp_lbrace >= 0) {
-    const int right = pt[tmp_lbrace].right;
-
-    if (       is_pt_name("rbrace"  , pt[right], bnf)) {
-      symbol[symbol_empty_id].array[array_empty_id] = -2;
-
-    } else if (is_pt_name("integer_constant"  , pt[right], bnf)) {
-      const LEX_TOKEN t = token[pt[right].token_begin_index];
-      char str[100];
-      int str_length;
-      for (str_length=0; str_length<t.end-t.begin; str_length++) {
-        str[str_length] = t.src[t.begin+str_length];
-      }
-      str[str_length] = '\0';
-      const int str_int = atoi(str);
-      assert(str_int > 0);
-      symbol[symbol_empty_id].array[array_empty_id] = str_int;
-
-    } else {
-      assert(0);
-    }
-
-    array_empty_id++;
-    symbol[symbol_empty_id].array_end = array_empty_id;
-    tmp_lbrace = search_pt_index_right("lbrace", pt[tmp_lbrace].right, pt, bnf);
-  }
-
-  return array_empty_id;
-}/*}}}*/
+//static int register_pointer(/*{{{*/
+//  const   int symbol_empty_id
+//  , const int pointer
+//  , const BNF* bnf
+//  , PARSE_TREE* pt
+//  , SYMBOL* symbol
+//) {
+//
+//  int tmp_pointer = pointer;
+//  int pointer_depth = 0;
+//  while (tmp_pointer >= 0) {
+//    if ( is_pt_name("star"    , pt[pt[tmp_pointer].down], bnf)) pointer_depth++;
+//    if ( is_pt_name("const"   , pt[pt[tmp_pointer].down], bnf)
+//      || is_pt_name("volatile", pt[pt[tmp_pointer].down], bnf)
+//    ) {
+//      symbol[symbol_empty_id].pointer_qualify = pt[pt[tmp_pointer].down].bnf_id;
+//    }
+//
+//    tmp_pointer = pt[pt[tmp_pointer].down].right;
+//  }
+//  symbol[symbol_empty_id].pointer = pointer_depth;
+//
+//  return pointer_depth;
+//}/*}}}*/
+//static int register_array(/*{{{*/
+//  const   int symbol_empty_id
+//  , const int lbrace
+//  , const LEX_TOKEN* token
+//  , const BNF* bnf
+//  , PARSE_TREE* pt
+//  , SYMBOL* symbol
+//) {
+//
+//  // int a[5][6][7];
+//  // array_begin_id = 100
+//  // array_end_id   = 103
+//  // symbol[0].array = symbol[1].array = ... = symbol[symbol_empty_id].array
+//  // symbol[0].array[100] = 5
+//  // symbol[0].array[101] = 6
+//  // symbol[0].array[102] = 7
+//  // symbol[0].array[103] = -1
+//  // symbol[0].array[104] = -1
+//  //
+//  // int a[][];
+//  // array_begin_id = 100
+//  // array_end_id   = 102
+//  // symbol[0].array[100] = -2
+//  // symbol[0].array[101] = -2
+//  // symbol[0].array[102] = -1
+//  // symbol[0].array[103] = -1
+//  //
+//  // int a;
+//  // array_begin_id = 100
+//  // array_end_id   = 100
+//  // symbol[0].array[100] = -1
+//
+//  int array_empty_id;
+//  for (array_empty_id=0; array_empty_id<symbol[symbol_empty_id].total_array_size; array_empty_id++) {
+//    if (symbol[symbol_empty_id].array[array_empty_id] == -1) {
+//      // 配列が存在しない場合の設定
+//      symbol[symbol_empty_id].array_begin = array_empty_id;
+//      symbol[symbol_empty_id].array_end   = array_empty_id;
+//      break;
+//    }
+//  }
+//  assert(array_empty_id < symbol[0].total_array_size);
+//
+//  int tmp_lbrace = lbrace;
+//
+//  while (tmp_lbrace >= 0) {
+//    const int right = pt[tmp_lbrace].right;
+//
+//    if (       is_pt_name("rbrace"  , pt[right], bnf)) {
+//      symbol[symbol_empty_id].array[array_empty_id] = -2;
+//
+//    } else if (is_pt_name("integer_constant"  , pt[right], bnf)) {
+//      const LEX_TOKEN t = token[pt[right].token_begin_index];
+//      char str[100];
+//      int str_length;
+//      for (str_length=0; str_length<t.end-t.begin; str_length++) {
+//        str[str_length] = t.src[t.begin+str_length];
+//      }
+//      str[str_length] = '\0';
+//      const int str_int = atoi(str);
+//      assert(str_int > 0);
+//      symbol[symbol_empty_id].array[array_empty_id] = str_int;
+//
+//    } else {
+//      assert(0);
+//    }
+//
+//    array_empty_id++;
+//    symbol[symbol_empty_id].array_end = array_empty_id;
+//    tmp_lbrace = search_pt_index_right("lbrace", pt[tmp_lbrace].right, pt, bnf);
+//  }
+//
+//  return array_empty_id;
+//}/*}}}*/
 static int register_parameter_type_list(/*{{{*/
   const int  kind
   , const int function_id
@@ -886,5 +879,105 @@ void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt) {/*{{{*/
     assert(is_pt_name("EXTERNAL_DECLARATION", pt[index], bnf));
     if (pt[index].down < 0) delete_pt_recursive(index, pt);
     index = pt[index].right;
+  }
+}/*}}}*/
+static void register_declarator(/*{{{*/
+  const   int symbol_empty_id
+  , const int declarator
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+
+  const int down = pt[declarator].down;
+  assert(down >= 0);
+
+  int direct_declarator;
+  if (is_pt_name("POINTER", pt[down], bnf)) {
+    register_pointer(symbol_empty_id, down, bnf, pt, symbol);
+    direct_declarator = pt[down].right;
+  } else {
+    direct_declarator = down;
+  }
+  assert(direct_declarator >= 0);
+
+  register_direct_declarator(symbol_empty_id, direct_declarator, token, bnf, pt, symbol);
+}/*}}}*/
+static int get_new_array_index(const int* array, const int array_max_size) {/*{{{*/
+  int index=0;
+  for (index=0; index<array_max_size; index++) {
+    if (array[index] == -1) break;
+  }
+  return index;
+}/*}}}*/
+static void register_pointer(/*{{{*/
+  const   int symbol_empty_id
+  , const int pointer
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+
+  int array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
+  int tmp_pointer = pointer;
+  while (tmp_pointer >= 0) {
+    if ( is_pt_name("star"    , pt[pt[tmp_pointer].down], bnf)) {
+      symbol[symbol_empty_id].array[array_index] = 0;
+      array_index++;
+    }
+    if ( is_pt_name("const"   , pt[pt[tmp_pointer].down], bnf)
+      || is_pt_name("volatile", pt[pt[tmp_pointer].down], bnf)
+    ) {
+      fprintf(stderr, "ERROR: *const and *volatile is not supported\n");
+      assert(0);
+    }
+    tmp_pointer = pt[pt[tmp_pointer].down].right;
+  }
+}/*}}}*/
+static void register_direct_declarator(/*{{{*/
+  const   int symbol_empty_id
+  , const int direct_declarator
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+
+  int array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
+
+  assert(pt[direct_declarator].down >= 0);
+  int right = rightside_pt_index(pt[direct_declarator].down, pt);
+
+  while (right >= 0) {
+    if ( is_pt_name("rbrace", pt[right], bnf)) {
+      const int left = pt[right].left;
+      assert(left >= 0);
+      if ( is_pt_name("lbrace", pt[left], bnf)) {
+        symbol[symbol_empty_id].array[array_index] = 0;
+      } else if ( is_pt_name("integer_constant", pt[left], bnf)) {
+        const LEX_TOKEN t = token[pt[left].token_begin_index];
+        char str[100];
+        int str_length;
+        for (str_length=0; str_length<t.end-t.begin; str_length++) {
+          str[str_length] = t.src[t.begin+str_length];
+        }
+        str[str_length] = '\0';
+        const int str_int = atoi(str);
+        assert(str_int > 0);
+        symbol[symbol_empty_id].array[array_index] = str_int;
+      } else {
+        assert(0);
+      }
+      array_index++;
+
+    } else if ( is_pt_name("identifier", pt[right], bnf)) {
+      symbol[symbol_empty_id].token_id = pt[right].token_begin_index;
+
+    } else if ( is_pt_name("DECLARATOR", pt[right], bnf)) {
+      register_declarator(symbol_empty_id, right, token, bnf, pt, symbol);
+    }
+
+    right = pt[right].left;
   }
 }/*}}}*/
