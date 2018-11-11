@@ -92,8 +92,10 @@ int main(void) {
   fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
   //print_parse_tree(stderr, pt_size, pt, bnf, token);
 
-  static TYPE type[10000];
-  create_type_table(token, pt, bnf, type, sizeof(type)/sizeof(TYPE));
+  static TYPE   type[10000];
+  static SYMBOL member[10000];
+  static int member_array[10000];
+  create_type_table(block, token, pt, bnf, type, sizeof(type)/sizeof(TYPE), member, sizeof(member)/sizeof(SYMBOL), member_array, sizeof(member_array)/sizeof(int));
 
   //static SYMBOL symbol[10000];
   //static int array[10000];

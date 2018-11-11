@@ -8,18 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-const int SYMBOL_TABLE_UNUSED     = -1;
-const int SYMBOL_TABLE_VARIABLE   = 0;
-const int SYMBOL_TABLE_FUNCTION   = 1;
-const int SYMBOL_TABLE_F_ARGUMENT = 2;
-const int SYMBOL_TABLE_PROTOTYPE  = 3;
-const int SYMBOL_TABLE_P_ARGUMENT = 4;
-
-const int ARRAY_TYPE_POINTER = 0;
-const int ARRAY_TYPE_UNDEFINED_SIZE = -2;
-
 // 関数プロトタイプ/*{{{*/
-static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_size);
 static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* array);
 static int cretae_block_recursive(
  const   int        token_begin_index
@@ -69,7 +58,6 @@ static int register_function(
 );
 static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE* pt);
 static void delete_function(const int function_definition, const BNF* bnf, PARSE_TREE* pt);
-static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol);
 static bool delete_pt_recursive(const int index, PARSE_TREE* pt);
 static int register_parameter_declaration(
   const   int argument_id
@@ -102,15 +90,6 @@ static int register_parameter_type_list(
   , SYMBOL* symbol
 );
 void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt);
-static int get_new_array_index(const int* array, const int array_max_size);
-static void register_declarator(
-  const   int symbol_empty_id
-  , const int declarator
-  , const LEX_TOKEN* token
-  , const BNF* bnf
-  , PARSE_TREE* pt
-  , SYMBOL* symbol
-);
 static void register_direct_declarator(
   const   int symbol_empty_id
   , const int direct_declarator
@@ -147,7 +126,7 @@ extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const
 
   return 0;
 }/*}}}*/
-static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
+extern void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
   for (int i=0; i<array_max_size; i++) {
     array[i] = -1;
   }
@@ -515,7 +494,7 @@ static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE
     delete_pt_recursive(declaration, pt);
   }
 }/*}}}*/
-static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol) {/*{{{*/
+extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol) {/*{{{*/
   fprintf(fp, "%03d | ", symbol[line].id);
 
   const int token_id = symbol[line].token_id;
@@ -537,6 +516,7 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   if (symbol[line].kind == 2 ) fprintf(fp, "ARG %03d(%d){}", symbol[line].function_id, symbol[line].argument_id);
   if (symbol[line].kind == 3 ) fprintf(fp, "PRT %03d(%d); ", symbol[line].id, symbol[line].total_argument);
   if (symbol[line].kind == 4 ) fprintf(fp, "ARG %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
+  if (symbol[line].kind == 5 ) fprintf(fp, "SCT %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
 
   fprintf(fp, " | ");
   if (symbol[line].storage >= 0) fprintf(fp, "%-8s", bnf[symbol[line].storage].name);
@@ -878,7 +858,7 @@ void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt) {/*{{{*/
     index = pt[index].right;
   }
 }/*}}}*/
-static void register_declarator(/*{{{*/
+extern void register_declarator(/*{{{*/
   const   int symbol_empty_id
   , const int declarator
   , const LEX_TOKEN* token
@@ -901,7 +881,7 @@ static void register_declarator(/*{{{*/
 
   register_direct_declarator(symbol_empty_id, direct_declarator, token, bnf, pt, symbol);
 }/*}}}*/
-static int get_new_array_index(const int* array, const int array_max_size) {/*{{{*/
+extern int get_new_array_index(const int* array, const int array_max_size) {/*{{{*/
   int index=0;
   for (index=0; index<array_max_size; index++) {
     if (array[index] == -1) break;
@@ -999,4 +979,11 @@ static int search_identifier_recursive(/*{{{*/
   }
 
   return index;
+}/*}}}*/
+extern int search_unused_symbol_index(const SYMBOL* symbol) {/*{{{*/
+  int ret;
+  for (ret=0; ret<symbol[0].total_size; ret++) {
+    if (symbol[ret].kind == SYMBOL_TABLE_UNUSED) break;
+  }
+  return ret;
 }/*}}}*/

@@ -2,4 +2,5 @@ typedef int hoge;
 typedef struct {
   int a;
   char *(**b[2])[3];
+  hoge c;
 } HOGE;
