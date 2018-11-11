@@ -4,3 +4,8 @@ typedef struct {
   char *(**b[2])[3];
   hoge c;
 } HOGE;
+
+int main(void) {
+  hoge x;
+  HOGE y;
+}

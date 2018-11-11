@@ -38,3 +38,35 @@ extern int search_pt_index_up(const char *name, const int pt_index, const PARSE_
   }
   return current;
 }/*}}}*/
+extern bool delete_pt_recursive(const int index, PARSE_TREE* pt) {/*{{{*/
+  bool ret;
+  const PARSE_TREE del = pt[index];
+
+  if (index < 0) {
+    ret = false;
+  }
+
+  else {
+    const int up    = pt[index].up;
+    const int left  = pt[index].left;
+    const int right = pt[index].right;
+
+    if (up >= 0) {
+      if      ((left < 0) && (right >= 0)) {
+        assert(pt[up].down == index);
+        pt[up].down = right;
+      }
+      else if ((left < 0) && (right <  0)) {
+        assert(pt[up].down == index);
+        pt[up].down = -1;
+      }
+    }
+
+    if (left  >= 0) pt[left].right = del.right;
+    if (right >= 0) pt[right].left = del.left;
+
+    ret = true;
+  }
+
+  return ret;
+}/*}}}*/

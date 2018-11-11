@@ -1,3 +1,4 @@
+#include "../min-bnf-parser/include/text.h"
 #include "../include/common.h"
 #include "../include/type.h"
 #include "../include/symbol.h"
@@ -28,6 +29,14 @@ static void register_specifier_qualifier_list(
   , SYMBOL* member
 );
 static int search_unused_type_index(const TYPE* type);
+static void register_typedef_recursive(
+  const int pt_top_index
+  , const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , TYPE* type
+);
 /*}}}*/
 extern void create_type_table(/*{{{*/
   const BLOCK* block
@@ -45,7 +54,8 @@ extern void create_type_table(/*{{{*/
   initialize_symbol_table(member, member_max_size, array, array_max_size);
   register_default_type(bnf, type);
   register_struct_recursive(0, block, token, bnf, pt, type, member);
-  // const int typedef_basic_size = register_typedef_basic(bnf, type);
+  register_typedef_recursive(0, block, token, bnf, pt, type);
+  delete_empty_external_declaration(bnf, pt);
 
   print_type_table(stderr, token, bnf, type);
 
@@ -61,6 +71,7 @@ static void initialize_type_table(TYPE* type, const int type_max_size) {/*{{{*/
     type[i].used_size  = 0;
     type[i].bnf_id     = -1;
     type[i].token_id   = -1;
+    type[i].alias_id   = -1;
     type[i].block      = -1;
     type[i].byte       = -1;
   }
@@ -115,10 +126,23 @@ static int search_lex_bnf(const BNF* bnf, const char* name) {/*{{{*/
 static void print_type_table(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const TYPE* type) {/*{{{*/
   int i=0;
   while (type[i].bnf_id >= 0) {
-    fprintf(fp, "%03d |", i);
-    fprintf(fp, " %-15s", bnf[type[i].bnf_id].name);
-    fprintf(fp, "| block:%2d", type[i].block);
+    fprintf(fp, "%03d", i);
+    fprintf(fp, " | %-15s", bnf[type[i].bnf_id].name);
+    fprintf(fp, " | block:%2d", type[i].block);
+
+    if (0==strcmp("typedef", bnf[type[i].bnf_id].name)) {
+      assert(type[i].token_id >= 0);
+      assert(type[i].alias_id >= 0);
+
+      fprintf(fp, " | ");
+
+      print_token_name(fp, token[type[i].token_id]);
+      fprintf(fp, " --> ");
+      fprintf(fp, "%03d", type[i].alias_id);
+    }
+
     fprintf(fp, "\n");
+
     i++;
   }
 }/*}}}*/
@@ -249,3 +273,102 @@ static int search_unused_type_index(const TYPE* type) {/*{{{*/
   }
   return ret;
 }/*}}}*/
+static void register_typedef_recursive(/*{{{*/
+  const int pt_top_index
+  , const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , TYPE* type
+) {
+
+  // 変数をシンボルテーブルに登録
+  if (pt_top_index < 0) {
+    ;
+  }
+  else if (is_pt_name("typedef", pt[pt_top_index], bnf)) {
+
+    const int storage_class_specifier = pt[pt_top_index].up;
+    assert(storage_class_specifier);
+    assert(is_pt_name("STORAGE_CLASS_SPECIFIER", pt[storage_class_specifier], bnf));
+
+    const int type_specifier = search_pt_index_right("TYPE_SPECIFIER", storage_class_specifier, pt, bnf);
+    assert(type_specifier >= 0);
+
+    const int type_lex_token = pt[type_specifier].down;
+    assert(type_lex_token >= 0);
+
+    const int declaration_specifiers = pt[storage_class_specifier].up;
+    assert(declaration_specifiers);
+    assert(is_pt_name("DECLARATION_SPECIFIERS", pt[declaration_specifiers], bnf));
+
+    const int declaration = pt[declaration_specifiers].up;
+    assert(declaration);
+    assert(is_pt_name("DECLARATION", pt[declaration], bnf));
+
+    const int init_declarator_list = search_pt_index_right("INIT_DECLARATOR_LIST", declaration_specifiers, pt, bnf);
+    assert(init_declarator_list);
+    assert(is_pt_name("INIT_DECLARATOR_LIST", pt[init_declarator_list], bnf));
+
+    const int init_declarator = pt[init_declarator_list].down;
+    assert(init_declarator);
+    assert(is_pt_name("INIT_DECLARATOR", pt[init_declarator], bnf));
+
+    const int declarator = pt[init_declarator].down;
+    assert(declarator);
+    assert(is_pt_name("DECLARATOR", pt[declarator], bnf));
+
+    const int direct_declarator = pt[declarator].down;
+    assert(direct_declarator);
+    assert(is_pt_name("DIRECT_DECLARATOR", pt[direct_declarator], bnf));
+
+    const int identifier = pt[direct_declarator].down;
+    assert(identifier);
+    assert(is_pt_name("identifier", pt[identifier], bnf));
+
+    // 登録
+    const int type_empty_id = search_unused_type_index(type);
+    type[type_empty_id].bnf_id = search_lex_bnf(bnf, "typedef");
+    type[type_empty_id].token_id = pt[identifier].token_begin_index;
+    type[type_empty_id].block = block[pt[pt_top_index].token_begin_index].here;
+
+    // 参照元を登録
+    int alias_id;
+    // 参照先が構造体の場合
+    if (is_pt_name("struct", pt[type_lex_token], bnf)) {
+      for (alias_id=0; alias_id<type_empty_id-1; alias_id++) {
+        const int empty_token_id = pt[type_lex_token].token_begin_index;
+        const int alias_token_id = type[alias_id].token_id;
+
+        if (is_same_word(
+          token[alias_token_id].src, token[alias_token_id].begin, token[alias_token_id].end,
+          token[empty_token_id].src, token[empty_token_id].begin, token[empty_token_id].end
+        )) {
+          break;
+        }
+      }
+
+    // 参照先が構造体以外(intやchar)の場合
+    } else {
+      for (alias_id=0; alias_id<type_empty_id-1; alias_id++) {
+        const int empty_bnf_id = pt[type_lex_token].bnf_id;
+        const int alias_bnf_id = type[alias_id].bnf_id;
+
+        if (empty_bnf_id == alias_bnf_id) {
+          break;
+        }
+      }
+    }
+    type[type_empty_id].alias_id = alias_id;
+
+    // 構文木から構造体を削除
+    delete_pt_recursive(declaration, pt);
+  }
+
+  else {
+    const int right = pt[pt_top_index].right;
+    if (right >= 0) register_typedef_recursive(right, block, token, bnf, pt, type);
+    const int down  = pt[pt_top_index].down;
+    if (down >= 0)  register_typedef_recursive(down, block, token, bnf, pt, type);
+  }
+}

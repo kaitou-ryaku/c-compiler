@@ -11,6 +11,7 @@ void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* arr
 int search_unused_symbol_index(const SYMBOL* symbol);
 void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol);
 int get_new_array_index(const int* array, const int array_max_size);
+extern void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt);
 
 static const int SYMBOL_TABLE_UNUSED     = -1;
 static const int SYMBOL_TABLE_VARIABLE   = 0;

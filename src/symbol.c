@@ -58,7 +58,6 @@ static int register_function(
 );
 static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE* pt);
 static void delete_function(const int function_definition, const BNF* bnf, PARSE_TREE* pt);
-static bool delete_pt_recursive(const int index, PARSE_TREE* pt);
 static int register_parameter_declaration(
   const   int argument_id
   , const int function_id
@@ -89,7 +88,6 @@ static int register_parameter_type_list(
   , PARSE_TREE* pt
   , SYMBOL* symbol
 );
-void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt);
 static void register_direct_declarator(
   const   int symbol_empty_id
   , const int direct_declarator
@@ -516,7 +514,7 @@ extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   if (symbol[line].kind == 2 ) fprintf(fp, "ARG %03d(%d){}", symbol[line].function_id, symbol[line].argument_id);
   if (symbol[line].kind == 3 ) fprintf(fp, "PRT %03d(%d); ", symbol[line].id, symbol[line].total_argument);
   if (symbol[line].kind == 4 ) fprintf(fp, "ARG %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
-  if (symbol[line].kind == 5 ) fprintf(fp, "SCT %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
+  if (symbol[line].kind == 5 ) fprintf(fp, "STR %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
 
   fprintf(fp, " | ");
   if (symbol[line].storage >= 0) fprintf(fp, "%-8s", bnf[symbol[line].storage].name);
@@ -550,38 +548,6 @@ extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   fprintf(fp, "block:%3d ", symbol[line].block);
   fprintf(fp, "addr:%3d ", symbol[line].addr);
   fprintf(fp, "size:%3d ", symbol[line].size);
-}/*}}}*/
-static bool delete_pt_recursive(const int index, PARSE_TREE* pt) {/*{{{*/
-  bool ret;
-  const PARSE_TREE del = pt[index];
-
-  if (index < 0) {
-    ret = false;
-  }
-
-  else {
-    const int up    = pt[index].up;
-    const int left  = pt[index].left;
-    const int right = pt[index].right;
-
-    if (up >= 0) {
-      if      ((left < 0) && (right >= 0)) {
-        assert(pt[up].down == index);
-        pt[up].down = right;
-      }
-      else if ((left < 0) && (right <  0)) {
-        assert(pt[up].down == index);
-        pt[up].down = -1;
-      }
-    }
-
-    if (left  >= 0) pt[left].right = del.right;
-    if (right >= 0) pt[right].left = del.left;
-
-    ret = true;
-  }
-
-  return ret;
 }/*}}}*/
 static int register_parameter_declaration(/*{{{*/
   const   int argument_id
@@ -850,7 +816,7 @@ static void delete_function(const int function_definition, const BNF* bnf, PARSE
 
   pt[compound_statement].left = identifier;
 }/*}}}*/
-void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt) {/*{{{*/
+extern void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt) {/*{{{*/
   int index = pt[0].down;
   while (index >= 0) {
     assert(is_pt_name("EXTERNAL_DECLARATION", pt[index], bnf));

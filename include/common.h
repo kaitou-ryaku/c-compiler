@@ -8,7 +8,8 @@ typedef struct {
   int total_size;
   int used_size;
   int bnf_id;
-  int token_id; // bnf_idがtypedefの場合のみ使用
+  int token_id; // bnf_idがstructかtypedefの場合のみ使用
+  int alias_id; // bnf_idがtypedefの場合のみ使用
   int block;
   int byte;  // バイト数
 } TYPE;
