@@ -123,6 +123,11 @@ static void register_pointer(
   , PARSE_TREE* pt
   , SYMBOL* symbol
 );
+static int search_identifier_recursive(
+  const int declarator
+  , const BNF* bnf
+  , PARSE_TREE* pt
+);
 /*}}}*/
 extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
   initialize_symbol_table(symbol, symbol_max_size, array, array_max_size);
@@ -331,13 +336,13 @@ static int create_symbol_variable_recursive(/*{{{*/
         const int parameter_type_list = search_pt_index_right("PARAMETER_TYPE_LIST", pt[direct_declarator].down, pt, bnf);
         new_symbol_empty_id = register_parameter_type_list(SYMBOL_TABLE_P_ARGUMENT, prototype_id, new_symbol_empty_id, parameter_type_list, block, token, bnf, pt, symbol);
 
-        //delete_declaration(declaration, bnf, pt);
+        delete_declaration(declaration, bnf, pt);
       }
 
       // グローバル変数
       else {
         new_symbol_empty_id = register_declaration(SYMBOL_TABLE_VARIABLE, symbol_empty_id, declaration, 0, token, bnf, pt, symbol);
-        //delete_declaration(declaration, bnf, pt);
+        delete_declaration(declaration, bnf, pt);
       }
     }
 
@@ -467,11 +472,7 @@ static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE
   const int declarator = search_pt_index_right("DECLARATOR", pt[init_declarator].down, pt, bnf);
   assert(declarator >= 0);
 
-  const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
-  assert(direct_declarator >= 0);
-
-  //TODO ネストの場合も考慮し、DIRECT_DECLARATOR直下のidentifierを探す
-  const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
+  const int identifier = search_identifier_recursive(declarator, bnf, pt);
   assert(identifier >= 0);
 
   // 存在しない可能性もあるノード
@@ -980,4 +981,27 @@ static void register_direct_declarator(/*{{{*/
 
     right = pt[right].left;
   }
+}/*}}}*/
+static int search_identifier_recursive(/*{{{*/
+  const int declarator
+  , const BNF* bnf
+  , PARSE_TREE* pt
+) {
+  assert(is_pt_name("DECLARATOR", pt[declarator], bnf));
+
+  int index =declarator;
+  while (index >= 0) {
+    if (is_pt_name("DIRECT_DECLARATOR", pt[index], bnf)) {
+      const int direct_declarator = index;
+      index = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
+      if (index >= 0) break;
+      index = search_pt_index_right("DECLARATOR", pt[direct_declarator].down, pt, bnf);
+    } else if (is_pt_name("DECLARATOR", pt[index], bnf)) {
+      index = search_pt_index_right("DIRECT_DECLARATOR", pt[index].down, pt, bnf);
+    } else {
+      assert(0);
+    }
+  }
+
+  return index;
 }/*}}}*/
