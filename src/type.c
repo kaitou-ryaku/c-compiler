@@ -115,8 +115,9 @@ static int search_lex_bnf(const BNF* bnf, const char* name) {/*{{{*/
 static void print_type_table(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const TYPE* type) {/*{{{*/
   int i=0;
   while (type[i].bnf_id >= 0) {
-    fprintf(fp, "%03d ", i);
-    fprintf(fp, "%s", bnf[type[i].bnf_id].name);
+    fprintf(fp, "%03d |", i);
+    fprintf(fp, " %-15s", bnf[type[i].bnf_id].name);
+    fprintf(fp, "| block:%2d", type[i].block);
     fprintf(fp, "\n");
     i++;
   }
@@ -141,10 +142,13 @@ static void register_struct_recursive(/*{{{*/
     const int struct_or_union = pt[pt_top_index].down;
     assert(struct_or_union >= 0);
 
-    assert(pt[struct_or_union].down >= 0);
-    assert(is_pt_name("struct", pt[pt[struct_or_union].down], bnf));
+    const int struct_id = pt[struct_or_union].down; // const int struct = は予約語なので無理
+    assert(struct_id >= 0);
+    assert(is_pt_name("struct", pt[struct_id], bnf));
     const int type_empty_id = search_unused_type_index(type);
-    type[type_empty_id].bnf_id = pt[pt[struct_or_union].down].bnf_id;
+    type[type_empty_id].bnf_id = pt[struct_id].bnf_id;
+    type[type_empty_id].token_id = pt[struct_id].token_begin_index;
+    type[type_empty_id].block = block[pt[struct_id].token_begin_index].here;
 
     const int struct_declaration_list = search_pt_index_right("STRUCT_DECLARATION_LIST", struct_or_union, pt, bnf);
     assert(struct_declaration_list >= 0);
