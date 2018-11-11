@@ -130,19 +130,39 @@ void undo_replace_typedef_declare(LEX_TOKEN* token, const BNF* bnf) {/*{{{*/
   }
   assert(index_identifier >= 0);
 
-  bool typedef_name_wait = false;
+  bool semicolon_wait = false;
+  bool rbracket_wait = false;
+  int bracket_count = 0;
   for (int i=0; i<token[0].used_size; i++) {
 
-    // typedefを発見 -> typedef_name_wait をgrueにする
+    // typedefを発見 -> semicolon_wait をgrueにする
     if (is_token_kind("typedef", token[i], bnf)) {
-      assert(!typedef_name_wait);
-      typedef_name_wait = true;
+      assert(!semicolon_wait);
+      semicolon_wait = true;
+    }
+
+    // typedefの後の非構造体に{を発見 -> 構造体に入る。対応する}が現れるまで rbracket_wait をtrueにする
+    else if (semicolon_wait == true && rbracket_wait == false && is_token_kind("lbracket", token[i], bnf)) {
+      rbracket_wait = true;
+      assert(bracket_count == 0);
+      bracket_count++;
+    }
+
+    // typedefの後の構造体中に{が現れた -> 括弧のカウントを増やす
+    else if (semicolon_wait == true && rbracket_wait == true && is_token_kind("lbracket", token[i], bnf)) {
+      bracket_count++;
+    }
+
+    // typedefの後の構造体中に}が現れた -> 括弧のカウントを減らす。もし括弧数が0になれば、構造体部分の終わり。
+    else if (semicolon_wait == true && rbracket_wait == true && is_token_kind("rbracket", token[i], bnf)) {
+      bracket_count--;
+      if (bracket_count == 0) rbracket_wait = false;
     }
 
     // typedefの後の非構造体で;が現れた -> その前のトークンが型名エイリアス
-    else if (typedef_name_wait == true && is_token_kind("typedef_name", token[i], bnf)) {
-      token[i].kind = index_identifier;
-      typedef_name_wait = false;
+    else if (semicolon_wait == true && rbracket_wait == false && is_token_kind("semicolon", token[i], bnf)) {
+      token[i-1].kind = index_identifier;
+      semicolon_wait = false;
     }
   }
 }/*}}}*/
