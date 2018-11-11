@@ -93,7 +93,7 @@ int main(void) {
   //print_parse_tree(stderr, pt_size, pt, bnf, token);
 
   static TYPE type[10000];
-  create_default_type(token, pt, bnf, type, sizeof(type)/sizeof(TYPE));
+  create_type_table(token, pt, bnf, type, sizeof(type)/sizeof(TYPE));
 
   static SYMBOL symbol[10000];
   static int array[10000];

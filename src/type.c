@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-extern int create_default_type(
+extern int create_type_table(
   const LEX_TOKEN* token
   , PARSE_TREE* pt
   , const BNF* bnf
