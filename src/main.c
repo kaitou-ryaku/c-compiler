@@ -3,6 +3,7 @@
 #include "../include/common.h"
 #include "../include/symbol.h"
 #include "../include/typedef.h"
+#include "../include/type.h"
 #include <stdio.h>
 
 static void read_file(const char* filename, char* str, const int str_max_size);
@@ -90,6 +91,9 @@ int main(void) {
 
   fprintf(stderr, "TOTAL PARSE TREE STEP:%d\n", pt_size);
   //print_parse_tree(stderr, pt_size, pt, bnf, token);
+
+  static TYPE type[10000];
+  create_default_type(token, pt, bnf, type, sizeof(type)/sizeof(TYPE));
 
   static SYMBOL symbol[10000];
   static int array[10000];
