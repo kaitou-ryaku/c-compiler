@@ -95,7 +95,7 @@ int main(void) {
   static int array[10000];
   create_symbol_table(block, token, bnf, pt, symbol, sizeof(symbol)/sizeof(SYMBOL), array, sizeof(array)/sizeof(int));
 
-  ////translate_pt_to_ast(pt, bnf);
+  //translate_pt_to_ast(pt, bnf);
   ////print_parse_tree(stderr, pt_size, pt, bnf, token);
 
   {

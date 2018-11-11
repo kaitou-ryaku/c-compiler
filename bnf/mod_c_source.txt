@@ -1,1 +1,6 @@
-int **(***(****a)[1][2])[3][4];
+extern int** ifunc(const int argc, const char *argv[]);
+static const int **(***(****a)[][2])[3][4] = &(&a);
+
+int main(void) {
+  int b = &a;
+}

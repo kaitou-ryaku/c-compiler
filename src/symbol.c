@@ -15,6 +15,9 @@ const int SYMBOL_TABLE_F_ARGUMENT = 2;
 const int SYMBOL_TABLE_PROTOTYPE  = 3;
 const int SYMBOL_TABLE_P_ARGUMENT = 4;
 
+const int ARRAY_TYPE_POINTER = 0;
+const int ARRAY_TYPE_UNDEFINED_SIZE = -2;
+
 // 関数プロトタイプ/*{{{*/
 static void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_size);
 static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* array);
@@ -325,15 +328,14 @@ static int create_symbol_variable_recursive(/*{{{*/
     else if (is_pt_name("EXTERNAL_DECLARATION", pt[up], bnf)) {
       const int down = pt[direct_declarator].down;
       assert(down >= 0);
-      const int rparen = search_pt_index_right("rparen", down, pt, bnf);
+      const int parameter_type_list = search_pt_index_right("PARAMETER_TYPE_LIST", down, pt, bnf);
 
       // 関数プロトタイプ宣言
-      if (rparen >= 0) {
+      if (parameter_type_list >= 0) {
         new_symbol_empty_id = register_declaration(SYMBOL_TABLE_PROTOTYPE, symbol_empty_id, declaration, 0, token, bnf, pt, symbol);
 
         // 関数名と型を登録
         const int prototype_id = symbol_empty_id;
-        const int parameter_type_list = search_pt_index_right("PARAMETER_TYPE_LIST", pt[direct_declarator].down, pt, bnf);
         new_symbol_empty_id = register_parameter_type_list(SYMBOL_TABLE_P_ARGUMENT, prototype_id, new_symbol_empty_id, parameter_type_list, block, token, bnf, pt, symbol);
 
         delete_declaration(declaration, bnf, pt);
@@ -424,8 +426,6 @@ static int register_declaration(/*{{{*/
   register_declarator(symbol_empty_id, declarator, token, bnf, pt, symbol);
   const int registered_array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
   symbol[symbol_empty_id].array_size = registered_array_index - array_index;
-  // register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
-  // register_array(symbol_empty_id, lbrace, token, bnf, pt, symbol);
 
   return symbol_empty_id+1;
 }/*}}}*/
@@ -531,12 +531,12 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   }
   fprintf(fp, "| ");
 
-  if (symbol[line].kind == -1) fprintf(fp, "UNUSED         ");
-  if (symbol[line].kind == 0 ) fprintf(fp, "VAR  {%2d}    ", symbol[line].block);
-  if (symbol[line].kind == 1 ) fprintf(fp, "FUNC %03d(%d){}", symbol[line].id, symbol[line].total_argument);
-  if (symbol[line].kind == 2 ) fprintf(fp, "ARG  %03d(%d){}", symbol[line].function_id, symbol[line].argument_id);
-  if (symbol[line].kind == 3 ) fprintf(fp, "PROT %03d(%d); ", symbol[line].id, symbol[line].total_argument);
-  if (symbol[line].kind == 4 ) fprintf(fp, "ARG  %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
+  if (symbol[line].kind == -1) fprintf(fp, "UNUSED        ");
+  if (symbol[line].kind == 0 ) fprintf(fp, "VAR %2d:{}   ", symbol[line].block);
+  if (symbol[line].kind == 1 ) fprintf(fp, "FNC %03d(%d){}", symbol[line].id, symbol[line].total_argument);
+  if (symbol[line].kind == 2 ) fprintf(fp, "ARG %03d(%d){}", symbol[line].function_id, symbol[line].argument_id);
+  if (symbol[line].kind == 3 ) fprintf(fp, "PRT %03d(%d); ", symbol[line].id, symbol[line].total_argument);
+  if (symbol[line].kind == 4 ) fprintf(fp, "ARG %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
 
   fprintf(fp, " | ");
   if (symbol[line].storage >= 0) fprintf(fp, "%-8s", bnf[symbol[line].storage].name);
@@ -557,9 +557,9 @@ static void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   rest = 15;
   for (int i=0; i<symbol[line].array_size; i++) {
     const int size = symbol[line].array[i];
-    if (size == -2) {
+    if (size == ARRAY_TYPE_UNDEFINED_SIZE) {
       rest -= fprintf(fp, "[]");
-    } else if (size == 0) {
+    } else if (size == ARRAY_TYPE_POINTER) {
       rest -= fprintf(fp, "*");
     } else {
       rest -= fprintf(fp, "[%d]", size);
@@ -621,25 +621,21 @@ static int register_parameter_declaration(/*{{{*/
 
   const int declarator = search_pt_index_right("DECLARATOR", pt[parameter_declaration].down, pt, bnf);
 
-  // 関数プロトタイプや関数定義のvoidなど、identifierが存在しないパターンを考慮して分岐
-  if (declarator >= 0) {
-    const int pointer = search_pt_index_right("POINTER", pt[declarator].down, pt, bnf);
-    register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
-
-    const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
-
-    symbol[symbol_empty_id].token_id = -1;
-    if (direct_declarator >= 0) {
-      const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
-      if (identifier >= 0) symbol[symbol_empty_id].token_id = pt[identifier].token_begin_index;
-    }
-  }
-
   symbol[symbol_empty_id].kind = kind;
   symbol[symbol_empty_id].block = block_here;
   symbol[symbol_empty_id].function_id = function_id;
   symbol[symbol_empty_id].argument_id = argument_id;
   register_type(symbol_empty_id, declaration_specifiers, bnf, pt, symbol);
+
+  if (declarator >= 0) {
+    const int array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
+    symbol[symbol_empty_id].array = &(symbol[0].array[array_index]);
+    register_declarator(symbol_empty_id, declarator, token, bnf, pt, symbol);
+    const int registered_array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
+    symbol[symbol_empty_id].array_size = registered_array_index - array_index;
+  } else {
+    symbol[symbol_empty_id].array_size = 0;
+  }
 
   return symbol_empty_id+1;
 }/*}}}*/
@@ -919,12 +915,11 @@ static void register_pointer(/*{{{*/
   , PARSE_TREE* pt
   , SYMBOL* symbol
 ) {
-
   int array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
   int tmp_pointer = pointer;
   while (tmp_pointer >= 0) {
     if ( is_pt_name("star"    , pt[pt[tmp_pointer].down], bnf)) {
-      symbol[symbol_empty_id].array[array_index] = 0;
+      symbol[0].array[array_index] = ARRAY_TYPE_POINTER;
       array_index++;
     }
     if ( is_pt_name("const"   , pt[pt[tmp_pointer].down], bnf)
@@ -955,7 +950,7 @@ static void register_direct_declarator(/*{{{*/
       const int left = pt[right].left;
       assert(left >= 0);
       if ( is_pt_name("lbrace", pt[left], bnf)) {
-        symbol[symbol_empty_id].array[array_index] = 0;
+        symbol[0].array[array_index] = ARRAY_TYPE_UNDEFINED_SIZE;
       } else if ( is_pt_name("integer_constant", pt[left], bnf)) {
         const LEX_TOKEN t = token[pt[left].token_begin_index];
         char str[100];
@@ -966,7 +961,7 @@ static void register_direct_declarator(/*{{{*/
         str[str_length] = '\0';
         const int str_int = atoi(str);
         assert(str_int > 0);
-        symbol[symbol_empty_id].array[array_index] = str_int;
+        symbol[0].array[array_index] = str_int;
       } else {
         assert(0);
       }
