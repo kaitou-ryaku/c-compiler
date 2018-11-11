@@ -142,6 +142,7 @@ static void register_struct_recursive(/*{{{*/
     const int struct_or_union = pt[pt_top_index].down;
     assert(struct_or_union >= 0);
 
+    // 構造体名をtypeテーブルに追加
     const int struct_id = pt[struct_or_union].down; // const int struct = は予約語なので無理
     assert(struct_id >= 0);
     assert(is_pt_name("struct", pt[struct_id], bnf));
@@ -156,6 +157,7 @@ static void register_struct_recursive(/*{{{*/
     int struct_declaration = pt[struct_declaration_list].down;
     assert(struct_declaration >= 0);
 
+    // 構造体メンバをmemberテーブルに追加
     int count=0;
     while (struct_declaration >= 0) {
       assert(struct_declaration >= 0);
@@ -192,6 +194,16 @@ static void register_struct_recursive(/*{{{*/
       member_empty_id++;
       struct_declaration = pt[struct_declaration].right;
     }
+
+    // 構文木から構造体を削除
+    assert(pt[pt_top_index].left < 0);
+    assert(pt[pt_top_index].right < 0);
+    const int up = pt[pt_top_index].up;
+    pt[up].down = struct_id;
+    pt[struct_id].up = up;
+    pt[struct_id].left = -1;
+    pt[struct_id].right = -1;
+    assert(pt[struct_id].down < 0);
   }
 
   else {
