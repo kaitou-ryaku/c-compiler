@@ -7,8 +7,9 @@ typedef struct {
   int id;
   int total_size;
   int used_size;
-  int state; // unusedは-1, intやcharは1, 構造体名は2, 構造体メンバは3
-  int kind;  // state=1ならbnf_id, state>1ならidentifierのtokenのid
+  int bnf_id;
+  int token_id; // bnf_idがtypedefの場合のみ使用
+  int block;
   int byte;  // バイト数
 } TYPE;
 

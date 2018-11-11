@@ -4,16 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
-const int TYPE_UNUSED_STATE = -1;
-const int TYPE_BASIC_STATE = 1;
-const int TYPE_STRUCT_STATE = 2;
-const int TYPE_MEMBER_STATE = 3;
-
+// 関数プロトタイプ/*{{{*/
 static void initialize_type_table(TYPE* type, const int type_max_size);
 static int register_default_type(const BNF* bnf, TYPE* type);
 static int search_lex_bnf(const BNF* bnf, const char* name);
 static void print_type_table(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const TYPE* type);
-
+/*}}}*/
 extern int create_type_table(/*{{{*/
   const LEX_TOKEN* token
   , PARSE_TREE* pt
@@ -31,53 +27,48 @@ static void initialize_type_table(TYPE* type, const int type_max_size) {/*{{{*/
     type[i].id         = i;
     type[i].total_size = type_max_size;
     type[i].used_size  = 0;
-    type[i].state      = TYPE_UNUSED_STATE;
-    type[i].kind       = -1;
+    type[i].bnf_id     = -1;
+    type[i].token_id   = -1;
+    type[i].block      = -1;
     type[i].byte       = -1;
   }
 }/*}}}*/
 static int register_default_type(const BNF* bnf, TYPE* type) {/*{{{*/
   int i=0;
 
-  type[i].state = TYPE_BASIC_STATE;
-  type[i].kind  = search_lex_bnf(bnf, "char");
+  type[i].bnf_id = search_lex_bnf(bnf, "char");
   type[i].byte  = 1;
   i++;
 
-  type[i].state = TYPE_BASIC_STATE;
-  type[i].kind  = search_lex_bnf(bnf, "double");
+  type[i].bnf_id = search_lex_bnf(bnf, "double");
   type[i].byte  = 8;
   i++;
 
-  type[i].state = TYPE_BASIC_STATE;
-  type[i].kind  = search_lex_bnf(bnf, "float");
+  type[i].bnf_id = search_lex_bnf(bnf, "float");
   type[i].byte  = 4;
   i++;
 
-  type[i].state = TYPE_BASIC_STATE;
-  type[i].kind  = search_lex_bnf(bnf, "int");
+  type[i].bnf_id = search_lex_bnf(bnf, "int");
   type[i].byte  = 4;
   i++;
 
-  type[i].state = TYPE_BASIC_STATE;
-  type[i].kind  = search_lex_bnf(bnf, "long");
+  type[i].bnf_id = search_lex_bnf(bnf, "long");
   type[i].byte  = 8;
   i++;
 
-  type[i].state = TYPE_BASIC_STATE;
-  type[i].kind  = search_lex_bnf(bnf, "short");
+  type[i].bnf_id = search_lex_bnf(bnf, "short");
   type[i].byte  = 2;
   i++;
 
-  type[i].state = TYPE_BASIC_STATE;
-  type[i].kind  = search_lex_bnf(bnf, "signed");
+  type[i].bnf_id = search_lex_bnf(bnf, "signed");
   type[i].byte  = 4;
   i++;
 
-  type[i].state = TYPE_BASIC_STATE;
-  type[i].kind  = search_lex_bnf(bnf, "unsigned");
+  type[i].bnf_id = search_lex_bnf(bnf, "unsigned");
   type[i].byte  = 4;
   i++;
+
+  for (int j=0; j<i; j++) type[j].block = 0;
 
   return i;
 }/*}}}*/
@@ -91,16 +82,9 @@ static int search_lex_bnf(const BNF* bnf, const char* name) {/*{{{*/
 }/*}}}*/
 static void print_type_table(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const TYPE* type) {/*{{{*/
   int i=0;
-  while (type[i].state != TYPE_UNUSED_STATE) {
+  while (type[i].bnf_id >= 0) {
     fprintf(fp, "%03d ", i);
-    if (type[i].state == TYPE_BASIC_STATE) {
-      fprintf(fp, "BASIC  ");
-      fprintf(fp, "%s", bnf[type[i].kind].name);
-    } else if (type[i].state == TYPE_STRUCT_STATE) {
-      fprintf(fp, "STRUCT ");
-    } else if (type[i].state == TYPE_MEMBER_STATE) {
-      fprintf(fp, "MEMBER ");
-    }
+    fprintf(fp, "%s", bnf[type[i].bnf_id].name);
     fprintf(fp, "\n");
     i++;
   }
