@@ -2,6 +2,7 @@
 #include "../include/symbol.h"
 #include "../include/pt_common.h"
 #include "../min-bnf-parser/include/min-bnf-parser.h"
+#include "../min-bnf-parser/include/text.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -118,7 +119,7 @@ extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const
   delete_empty_external_declaration(bnf, pt);
 
   for (int i=0; i<empty_symbol_id; i++) {
-    print_symbol_table_line(stderr, i, token, bnf, symbol);
+    print_symbol_table_line(stderr, i, token, bnf, pt, symbol);
     fprintf(stderr, "\n");
   }
 
@@ -492,7 +493,7 @@ static void delete_declaration(const int declaration, const BNF* bnf, PARSE_TREE
     delete_pt_recursive(declaration, pt);
   }
 }/*}}}*/
-extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const SYMBOL* symbol) {/*{{{*/
+extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol) {/*{{{*/
   fprintf(fp, "%03d | ", symbol[line].id);
 
   const int token_id = symbol[line].token_id;
@@ -517,17 +518,25 @@ extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   if (symbol[line].kind == 5 ) fprintf(fp, "STR %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
 
   fprintf(fp, " | ");
-  if (symbol[line].storage >= 0) fprintf(fp, "%-8s", bnf[symbol[line].storage].name);
+  if (symbol[line].storage >= 0) fprintf(fp, "%-8s", bnf[pt[symbol[line].storage].bnf_id].name);
   else fprintf(fp, "        ");
 
   fprintf(fp, "| ");
-  if (symbol[line].qualify >= 0) fprintf(fp, "%-8s", bnf[symbol[line].qualify].name);
+  if (symbol[line].qualify >= 0) fprintf(fp, "%-8s", bnf[pt[symbol[line].qualify].bnf_id].name);
   else fprintf(fp, "        ");
 
   fprintf(fp, "| ");
   if (symbol[line].type >= 0) {
-    if (0==strcmp("typedef_name", bnf[symbol[line].type].name)) fprintf(fp, "%-8s", "TYPEDEF");
-    else fprintf(fp, "%-8s", bnf[symbol[line].type].name);
+    if (0==strcmp("typedef_name", bnf[pt[symbol[line].type].bnf_id].name)) {
+      const int alias_id = pt[symbol[line].type].token_begin_index;
+      rest = 8;
+      for (int i=token[alias_id].begin; i<token[alias_id].end; i++) {
+        fprintf(fp, "%c", token[0].src[i]);
+        rest--;
+      }
+      for (int i=0; i<rest; i++) fprintf(fp, " ");
+    }
+    else fprintf(fp, "%-8s", bnf[pt[symbol[line].type].bnf_id].name);
   }
   else fprintf(fp, "        ");
 
@@ -600,15 +609,15 @@ static void register_type(/*{{{*/
 
     if (is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
       assert(symbol[symbol_empty_id].type < 0);
-      symbol[symbol_empty_id].type = pt[keyword].bnf_id;
+      symbol[symbol_empty_id].type = keyword;
     }
     if (is_pt_name("STORAGE_CLASS_SPECIFIER", pt[specifier], bnf)) {
       assert(symbol[symbol_empty_id].storage < 0);
-      symbol[symbol_empty_id].storage = pt[keyword].bnf_id;
+      symbol[symbol_empty_id].storage = keyword;
     }
     if (is_pt_name("TYPE_QUALIFIER", pt[specifier], bnf)) {
       assert(symbol[symbol_empty_id].qualify < 0);
-      symbol[symbol_empty_id].qualify = pt[keyword].bnf_id;
+      symbol[symbol_empty_id].qualify = keyword;
     }
 
     specifier = pt[specifier].right;
@@ -770,23 +779,8 @@ static int register_parameter_type_list(/*{{{*/
         , symbol
       );
 
-      // voidの場合
-      const int type_id = symbol[new_symbol_empty_id].type;
-      if ((type_id < 0) || (0 == strcmp("void", bnf[type_id].name))) {
-        initialize_symbol_table_unit(symbol, new_symbol_empty_id, symbol[0].array);
-
-      // int等の場合
-      } else {
-        // 関数定義で変数名が無かったらエラー
-        if (symbol[new_symbol_empty_id].token_id < 0) {
-          fprintf(stderr, "ERROR: Function definition argument lacks identifier.\n");
-          assert(0);
-        }
-
-        new_symbol_empty_id = tmp_id;
-        argument_id++;
-      }
-
+      new_symbol_empty_id = tmp_id;
+      argument_id++;
       parameter_declaration = pt[parameter_declaration].right;
     }
     symbol[function_id].total_argument = argument_id;

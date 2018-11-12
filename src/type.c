@@ -60,7 +60,7 @@ extern void create_type_table(/*{{{*/
   print_type_table(stderr, token, bnf, type);
 
   for (int i=0; member[i].kind != SYMBOL_TABLE_UNUSED; i++) {
-    print_symbol_table_line(stderr, i, token, bnf, member);
+    print_symbol_table_line(stderr, i, token, bnf, pt, member);
     fprintf(stderr, "\n");
   }
 }/*}}}*/
@@ -256,11 +256,11 @@ static void register_specifier_qualifier_list(/*{{{*/
 
     if (is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
       assert(member[member_empty_id].type < 0);
-      member[member_empty_id].type = pt[keyword].bnf_id;
+      member[member_empty_id].type = keyword;
     }
     if (is_pt_name("TYPE_QUALIFIER", pt[specifier], bnf)) {
       assert(member[member_empty_id].qualify < 0);
-      member[member_empty_id].qualify = pt[keyword].bnf_id;
+      member[member_empty_id].qualify = keyword;
     }
 
     specifier = pt[specifier].right;

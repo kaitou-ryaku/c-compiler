@@ -20,9 +20,9 @@ typedef struct {
   int   used_size;
   int   token_id;
   int   kind; // 関数引数、変数、プロトタイプ等を表すSYMBOL_TABLE_*の値
-  int   type; // int, char
-  int   storage; // static, extern
-  int   qualify; // const, volatile
+  int   type;    // int, char, typedef_keywordのtoken_id
+  int   storage; // static, externのtoken_id
+  int   qualify; // const, volatileのtoken_id
   int   block; // ローカル変数なら属する{}, 関数定義の引数なら関数の{}, 関数プロトタイプの引数なら0
   int   addr;
   int*  array;      // int a; -> 無効  int *a; -> 0   int **a; -> 00  int a[2][3]; -> 23

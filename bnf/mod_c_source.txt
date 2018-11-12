@@ -9,3 +9,11 @@ int main(void) {
   hoge x;
   HOGE y;
 }
+
+static int* func(const int argc, const char** argv) {
+  int p = 3;
+}
+
+extern int none() {
+  int q = 4;
+}
