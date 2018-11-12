@@ -509,13 +509,14 @@ extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   }
   fprintf(fp, "| ");
 
-  if (symbol[line].kind == -1) fprintf(fp, "UNUSED        ");
-  if (symbol[line].kind == 0 ) fprintf(fp, "VAR %2d:{}   ", symbol[line].block);
-  if (symbol[line].kind == 1 ) fprintf(fp, "FNC %03d(%d){}", symbol[line].id, symbol[line].total_argument);
-  if (symbol[line].kind == 2 ) fprintf(fp, "ARG %03d(%d){}", symbol[line].function_id, symbol[line].argument_id);
-  if (symbol[line].kind == 3 ) fprintf(fp, "PRT %03d(%d); ", symbol[line].id, symbol[line].total_argument);
-  if (symbol[line].kind == 4 ) fprintf(fp, "ARG %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
-  if (symbol[line].kind == 5 ) fprintf(fp, "STR %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
+  const int kind = symbol[line].kind;
+  if (kind == SYMBOL_TABLE_UNUSED       ) fprintf(fp, "UNUSED        ");
+  if (kind == SYMBOL_TABLE_VARIABLE     ) fprintf(fp, "VAR %2d:{}   " , symbol[line].block);
+  if (kind == SYMBOL_TABLE_FUNCTION     ) fprintf(fp, "FNC %03d(%d){}", symbol[line].id, symbol[line].total_argument);
+  if (kind == SYMBOL_TABLE_F_ARGUMENT   ) fprintf(fp, "ARG %03d(%d){}", symbol[line].function_id, symbol[line].argument_id);
+  if (kind == SYMBOL_TABLE_PROTOTYPE    ) fprintf(fp, "PRT %03d(%d); ", symbol[line].id, symbol[line].total_argument);
+  if (kind == SYMBOL_TABLE_P_ARGUMENT   ) fprintf(fp, "ARG %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
+  if (kind == SYMBOL_TABLE_STRUCT_MEMBER) fprintf(fp, "STR %03d(%d); ", symbol[line].function_id, symbol[line].argument_id);
 
   fprintf(fp, " | ");
   if (symbol[line].storage >= 0) fprintf(fp, "%-8s", bnf[pt[symbol[line].storage].bnf_id].name);
