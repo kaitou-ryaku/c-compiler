@@ -10,9 +10,6 @@ void create_type_table(
   , TYPE* type
   , const int type_max_size
   , SYMBOL* member
-  , const int member_max_size
-  , int* array
-  , const int array_max_size
 );
 
 #endif

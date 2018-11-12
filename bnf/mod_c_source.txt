@@ -1,8 +1,7 @@
 typedef int hoge;
 typedef struct {
-  int a;
   char *(**b[2])[3];
-  hoge c;
+  hoge k;
 } HOGE;
 
 int main(void) {
@@ -17,3 +16,5 @@ static int* func(const int argc, const char** argv) {
 extern int none() {
   int q = 4;
 }
+
+extern char** prot(const int z);

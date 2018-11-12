@@ -46,23 +46,16 @@ extern void create_type_table(/*{{{*/
   , TYPE* type
   , const int type_max_size
   , SYMBOL* member
-  , const int member_max_size
-  , int* array
-  , const int array_max_size
 ) {
+  // memberテーブルは初期化済みとする
   initialize_type_table(type, type_max_size);
-  initialize_symbol_table(member, member_max_size, array, array_max_size);
   register_default_type(bnf, type);
   register_struct_recursive(0, block, token, bnf, pt, type, member);
   register_typedef_recursive(0, block, token, bnf, pt, type);
   delete_empty_external_declaration(bnf, pt);
 
+  fprintf(stderr, "\nTYPE TABLE\n");
   print_type_table(stderr, token, bnf, type);
-
-  for (int i=0; member[i].kind != SYMBOL_TABLE_UNUSED; i++) {
-    print_symbol_table_line(stderr, i, token, bnf, pt, member);
-    fprintf(stderr, "\n");
-  }
 }/*}}}*/
 static void initialize_type_table(TYPE* type, const int type_max_size) {/*{{{*/
   for (int i=0; i<type_max_size; i++) {

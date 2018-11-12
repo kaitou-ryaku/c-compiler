@@ -110,20 +110,18 @@ static int search_identifier_recursive(
   , PARSE_TREE* pt
 );
 /*}}}*/
-extern int create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
-  initialize_symbol_table(symbol, symbol_max_size, array, array_max_size);
-
-  int empty_symbol_id = 0;
+extern void create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol) {/*{{{*/
+  // memberテーブルは初期化済みとする
+  int empty_symbol_id = search_unused_symbol_index(symbol);
   empty_symbol_id = create_symbol_function_recursive(empty_symbol_id, block, token, bnf, pt, symbol);
   empty_symbol_id = create_symbol_variable_recursive(empty_symbol_id, 0, block, token, bnf, pt, symbol);
   delete_empty_external_declaration(bnf, pt);
 
-  for (int i=0; i<empty_symbol_id; i++) {
+  fprintf(stderr, "\nSYMBOL TABLE\n");
+  for (int i=0; symbol[i].kind != SYMBOL_TABLE_UNUSED; i++) {
     print_symbol_table_line(stderr, i, token, bnf, pt, symbol);
     fprintf(stderr, "\n");
   }
-
-  return 0;
 }/*}}}*/
 extern void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
   for (int i=0; i<array_max_size; i++) {
