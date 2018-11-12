@@ -423,19 +423,15 @@ static int register_function(/*{{{*/
   const int declarator = search_pt_index_right("DECLARATOR", pt[function_definition].down, pt, bnf);
   assert(declarator >= 0);
 
-  const int direct_declarator = search_pt_index_right("DIRECT_DECLARATOR", pt[declarator].down, pt, bnf);
-  assert(direct_declarator >= 0);
-
-  const int identifier = search_pt_index_right("identifier", pt[direct_declarator].down, pt, bnf);
-  assert(identifier >= 0);
-
-  const int pointer = search_pt_index_right("POINTER", pt[declarator].down, pt, bnf);
-
-  symbol[symbol_empty_id].token_id = pt[identifier].token_begin_index;
   symbol[symbol_empty_id].kind = kind;
   symbol[symbol_empty_id].block = block_here;
   register_type(symbol_empty_id, declaration_specifiers, bnf, pt, symbol);
-  register_pointer(symbol_empty_id, pointer, bnf, pt, symbol);
+
+  const int array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
+  symbol[symbol_empty_id].array = &(symbol[0].array[array_index]);
+  register_declarator(symbol_empty_id, declarator, token, bnf, pt, symbol);
+  const int registered_array_index = get_new_array_index(symbol[0].array, symbol[0].total_array_size);
+  symbol[symbol_empty_id].array_size = registered_array_index - array_index;
 
   return symbol_empty_id+1;
 }/*}}}*/
@@ -624,104 +620,6 @@ static void register_type(/*{{{*/
     specifier = pt[specifier].right;
   }
 }/*}}}*/
-//static int register_pointer(/*{{{*/
-//  const   int symbol_empty_id
-//  , const int pointer
-//  , const BNF* bnf
-//  , PARSE_TREE* pt
-//  , SYMBOL* symbol
-//) {
-//
-//  int tmp_pointer = pointer;
-//  int pointer_depth = 0;
-//  while (tmp_pointer >= 0) {
-//    if ( is_pt_name("star"    , pt[pt[tmp_pointer].down], bnf)) pointer_depth++;
-//    if ( is_pt_name("const"   , pt[pt[tmp_pointer].down], bnf)
-//      || is_pt_name("volatile", pt[pt[tmp_pointer].down], bnf)
-//    ) {
-//      symbol[symbol_empty_id].pointer_qualify = pt[pt[tmp_pointer].down].bnf_id;
-//    }
-//
-//    tmp_pointer = pt[pt[tmp_pointer].down].right;
-//  }
-//  symbol[symbol_empty_id].pointer = pointer_depth;
-//
-//  return pointer_depth;
-//}/*}}}*/
-//static int register_array(/*{{{*/
-//  const   int symbol_empty_id
-//  , const int lbrace
-//  , const LEX_TOKEN* token
-//  , const BNF* bnf
-//  , PARSE_TREE* pt
-//  , SYMBOL* symbol
-//) {
-//
-//  // int a[5][6][7];
-//  // array_begin_id = 100
-//  // array_end_id   = 103
-//  // symbol[0].array = symbol[1].array = ... = symbol[symbol_empty_id].array
-//  // symbol[0].array[100] = 5
-//  // symbol[0].array[101] = 6
-//  // symbol[0].array[102] = 7
-//  // symbol[0].array[103] = -1
-//  // symbol[0].array[104] = -1
-//  //
-//  // int a[][];
-//  // array_begin_id = 100
-//  // array_end_id   = 102
-//  // symbol[0].array[100] = -2
-//  // symbol[0].array[101] = -2
-//  // symbol[0].array[102] = -1
-//  // symbol[0].array[103] = -1
-//  //
-//  // int a;
-//  // array_begin_id = 100
-//  // array_end_id   = 100
-//  // symbol[0].array[100] = -1
-//
-//  int array_empty_id;
-//  for (array_empty_id=0; array_empty_id<symbol[symbol_empty_id].total_array_size; array_empty_id++) {
-//    if (symbol[symbol_empty_id].array[array_empty_id] == -1) {
-//      // 配列が存在しない場合の設定
-//      symbol[symbol_empty_id].array_begin = array_empty_id;
-//      symbol[symbol_empty_id].array_end   = array_empty_id;
-//      break;
-//    }
-//  }
-//  assert(array_empty_id < symbol[0].total_array_size);
-//
-//  int tmp_lbrace = lbrace;
-//
-//  while (tmp_lbrace >= 0) {
-//    const int right = pt[tmp_lbrace].right;
-//
-//    if (       is_pt_name("rbrace"  , pt[right], bnf)) {
-//      symbol[symbol_empty_id].array[array_empty_id] = -2;
-//
-//    } else if (is_pt_name("integer_constant"  , pt[right], bnf)) {
-//      const LEX_TOKEN t = token[pt[right].token_begin_index];
-//      char str[100];
-//      int str_length;
-//      for (str_length=0; str_length<t.end-t.begin; str_length++) {
-//        str[str_length] = t.src[t.begin+str_length];
-//      }
-//      str[str_length] = '\0';
-//      const int str_int = atoi(str);
-//      assert(str_int > 0);
-//      symbol[symbol_empty_id].array[array_empty_id] = str_int;
-//
-//    } else {
-//      assert(0);
-//    }
-//
-//    array_empty_id++;
-//    symbol[symbol_empty_id].array_end = array_empty_id;
-//    tmp_lbrace = search_pt_index_right("lbrace", pt[tmp_lbrace].right, pt, bnf);
-//  }
-//
-//  return array_empty_id;
-//}/*}}}*/
 static int register_parameter_type_list(/*{{{*/
   const int  kind
   , const int function_id
