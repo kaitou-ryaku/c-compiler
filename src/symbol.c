@@ -116,12 +116,7 @@ extern void create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, cons
   empty_symbol_id = create_symbol_function_recursive(empty_symbol_id, block, token, bnf, pt, symbol);
   empty_symbol_id = create_symbol_variable_recursive(empty_symbol_id, 0, block, token, bnf, pt, symbol);
   delete_empty_external_declaration(bnf, pt);
-
-  fprintf(stderr, "\nSYMBOL TABLE\n");
-  for (int i=0; symbol[i].kind != SYMBOL_TABLE_UNUSED; i++) {
-    print_symbol_table_line(stderr, i, token, bnf, pt, symbol);
-    fprintf(stderr, "\n");
-  }
+  print_symbol_table_all(token, bnf, pt, symbol);
 }/*}}}*/
 extern void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
   for (int i=0; i<array_max_size; i++) {
@@ -146,7 +141,7 @@ static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* a
   symbol[index].addr            = -1;
   symbol[index].array           = array;
   symbol[index].array_size      = -1;
-  symbol[index].size            = -1;
+  symbol[index].byte            = -1;
   symbol[index].function_id     = -1;
   symbol[index].argument_id     = -1;
   symbol[index].total_argument  = -1;
@@ -538,20 +533,20 @@ extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   fprintf(fp, "| ");
   rest = 15;
   for (int i=0; i<symbol[line].array_size; i++) {
-    const int size = symbol[line].array[i];
-    if (size == ARRAY_TYPE_UNDEFINED_SIZE) {
+    const int byte = symbol[line].array[i];
+    if (byte == ARRAY_TYPE_UNDEFINED) {
       rest -= fprintf(fp, "[]");
-    } else if (size == ARRAY_TYPE_POINTER) {
+    } else if (byte == ARRAY_TYPE_POINTER) {
       rest -= fprintf(fp, "*");
     } else {
-      rest -= fprintf(fp, "[%d]", size);
+      rest -= fprintf(fp, "[%d]", byte);
     }
   }
   for (int i=0; i<rest; i++) fprintf(fp, " ");
 
   fprintf(fp, "block:%3d ", symbol[line].block);
   fprintf(fp, "addr:%3d ", symbol[line].addr);
-  fprintf(fp, "size:%3d ", symbol[line].size);
+  fprintf(fp, "byte:%3d ", symbol[line].byte);
 }/*}}}*/
 static int register_parameter_declaration(/*{{{*/
   const   int argument_id
@@ -787,7 +782,7 @@ static void register_direct_declarator(/*{{{*/
       const int left = pt[right].left;
       assert(left >= 0);
       if ( is_pt_name("lbrace", pt[left], bnf)) {
-        symbol[0].array[array_index] = ARRAY_TYPE_UNDEFINED_SIZE;
+        symbol[0].array[array_index] = ARRAY_TYPE_UNDEFINED;
       } else if ( is_pt_name("integer_constant", pt[left], bnf)) {
         const LEX_TOKEN t = token[pt[left].token_begin_index];
         char str[100];
@@ -843,4 +838,11 @@ extern int search_unused_symbol_index(const SYMBOL* symbol) {/*{{{*/
     if (symbol[ret].kind == SYMBOL_TABLE_UNUSED) break;
   }
   return ret;
+}/*}}}*/
+extern void print_symbol_table_all(const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol) {/*{{{*/
+  fprintf(stderr, "\nSYMBOL TABLE\n");
+  for (int i=0; symbol[i].kind != SYMBOL_TABLE_UNUSED; i++) {
+    print_symbol_table_line(stderr, i, token, bnf, pt, symbol);
+    fprintf(stderr, "\n");
+  }
 }/*}}}*/

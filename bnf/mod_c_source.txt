@@ -1,20 +1,18 @@
-typedef int hoge;
-typedef struct {
-  char *(**b[2])[3];
-  hoge k;
-} HOGE;
-
-int main(void) {
-  hoge x;
-  HOGE y;
-}
-
-static int* func(const int argc, const char** argv) {
-  int p = 3;
-}
-
-extern int none() {
-  int q = 4;
-}
-
-extern char** prot(const int z);
+int a;
+int b[3];
+int *c;
+int *d[3];
+int (*e)[3];
+int f[3][5];
+int *g[3][5];
+int (*h)[3][5];
+int (*i[3])[5];
+int ((*j)[3])[5];
+int **k;
+int **l[3];
+int (**m)[3];
+int n[3][5];
+int **o[3][5];
+int (**p)[3][5];
+int (**q[3])[5];
+int ((**r)[3])[5];

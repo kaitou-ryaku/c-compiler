@@ -4,6 +4,7 @@
 #include "../include/symbol.h"
 #include "../include/typedef.h"
 #include "../include/type.h"
+#include "../include/memory.h"
 #include <stdio.h>
 
 static void read_file(const char* filename, char* str, const int str_max_size);
@@ -113,6 +114,9 @@ int main(void) {
 
     fclose(fp);
   }
+
+  register_symbol_size(type, symbol);
+  print_symbol_table_all(token, bnf, pt, symbol);
 
   return 0;
 }
