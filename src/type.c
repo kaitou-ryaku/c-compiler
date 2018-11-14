@@ -54,6 +54,9 @@ extern void create_type_table(/*{{{*/
   register_typedef_recursive(0, block, token, bnf, pt, type);
   delete_empty_external_declaration(bnf, pt);
 
+  const int type_used_size = search_unused_type_index(type);
+  for (int i=0; i<type_used_size; i++) type[i].used_size = type_used_size;
+
   fprintf(stderr, "\nTYPE TABLE\n");
   print_type_table(stderr, token, bnf, type);
 }/*}}}*/
