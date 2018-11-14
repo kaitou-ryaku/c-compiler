@@ -70,3 +70,41 @@ extern bool delete_pt_recursive(const int index, PARSE_TREE* pt) {/*{{{*/
 
   return ret;
 }/*}}}*/
+extern bool is_same_token_str(const int a, const int b, const LEX_TOKEN* token) {/*{{{*/
+  assert(a < token[0].used_size);
+  assert(b < token[0].used_size);
+  bool ret;
+  if (is_same_word(token[a].src, token[a].begin, token[a].end, token[b].src, token[b].begin, token[b].end)) {
+    ret = true;
+  } else {
+    ret = false;
+  }
+  return ret;
+}/*}}}*/
+extern bool inside_scope(const int token_child_index, const int token_parent_index, const BLOCK* block) {/*{{{*/
+  bool ret=false;
+
+  int seek_index = token_child_index;
+  while (seek_index >= 0) {
+    // parentの宣言ブロックにいる場合
+    if (block[token_parent_index].here == block[seek_index].here) {
+      ret=true;
+      break;
+    }
+
+    // parentの宣言ブロッキにいない場合、一つ上のブロックに移動
+    else {
+      int up_seek_index = seek_index;
+      while (up_seek_index >= 0) {
+        if (block[up_seek_index].here == block[seek_index].up) {
+          seek_index = up_seek_index;
+          break;
+        }
+        up_seek_index--;
+      }
+      if (up_seek_index < 0) break;
+    }
+  }
+
+  return ret;
+}/*}}}*/
