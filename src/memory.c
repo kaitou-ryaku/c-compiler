@@ -60,23 +60,48 @@ extern void register_type_and_symbol_size(/*{{{*/
   , TYPE* type
   , SYMBOL* symbol
 ) {
+  // ソースを上から下までたどり、各変数とtypedefの型を決定
   for (int token_index=0; token_index<token[0].used_size; token_index++) {
     const int type_index = search_type_table_by_declare_token(token_index, bnf, type);
     const int symbol_index = search_symbol_table_by_declare_token(token_index, symbol);
     assert((type_index < 0) || (symbol_index < 0));
     if ((type_index < 0) && (symbol_index < 0)) continue;
 
-    print_token_name(stderr, token[token_index-1]);
-    fprintf(stderr, " <");
-    print_token_name(stderr, token[token_index]);
-    fprintf(stderr, "> ");
-    print_token_name(stderr, token[token_index+1]);
-    fprintf(stderr, "      ");
+    // print_token_name(stderr, token[token_index-1]);
+    // fprintf(stderr, " <");
+    // print_token_name(stderr, token[token_index]);
+    // fprintf(stderr, "> ");
+    // print_token_name(stderr, token[token_index+1]);
+    // fprintf(stderr, "      ");
+    if (type_index >= 0)  {
+      if (type[type_index].byte >= 0) continue;
+      const char* bnf_name = bnf[type[type_index].bnf_id].name;
 
-    if (type_index >= 0)  fprintf(stderr, "TYPE\n");
-    if (symbol_index >= 0) fprintf(stderr, "SYMBOL\n");
+      // TODO typedef int hoge;のみ対応。int*やint[10]には未対応
+      if (strcmp("typedef", bnf_name)==0) {
+        const int alias_id = type[type_index].alias_id;
 
-    // if (0==strcmp("typedef", bnf_name)) is_type_typedef=true;
-    // if (0==strcmp("struct" , bnf_name)) is_type_struct=true;
+        int origin_type_index=0;
+        while (origin_type_index < type[0].used_size) {
+          if (is_same_token_str(alias_id, origin_type_index, token)) {
+            type[type_index].byte = type[origin_type_index].byte;
+            break;
+          }
+          origin_type_index++;
+        }
+        assert(origin_type_index < type[0].used_size);
+
+      } else if (strcmp("struct", bnf_name)==0) {
+
+      } else {
+        assert(0);
+      }
+
+    } else if (symbol_index >= 0) {
+      if (symbol[symbol_index].byte >= 0) continue;
+
+    } else {
+      assert(0);
+    }
   }
 }/*}}}*/

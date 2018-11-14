@@ -11,7 +11,6 @@
 static void initialize_type_table(TYPE* type, const int type_max_size);
 static int register_default_type(const BNF* bnf, TYPE* type);
 static int search_lex_bnf(const BNF* bnf, const char* name);
-static void print_type_table(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const TYPE* type);
 static void register_struct_recursive(
   const int pt_top_index
   , const BLOCK* block
@@ -119,12 +118,13 @@ static int search_lex_bnf(const BNF* bnf, const char* name) {/*{{{*/
   if (bnf_id == bnf[0].total_size) bnf_id = -1;
   return bnf_id;
 }/*}}}*/
-static void print_type_table(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const TYPE* type) {/*{{{*/
+extern void print_type_table(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const TYPE* type) {/*{{{*/
   int i=0;
   while (type[i].bnf_id >= 0) {
     fprintf(fp, "%03d", i);
-    fprintf(fp, " | %-15s", bnf[type[i].bnf_id].name);
+    fprintf(fp, " |%-15s", bnf[type[i].bnf_id].name);
     fprintf(fp, " | block:%2d", type[i].block);
+    fprintf(fp, " | byte:%3d" , type[i].byte);
 
     if (0==strcmp("typedef", bnf[type[i].bnf_id].name)) {
       assert(type[i].token_id >= 0);
@@ -368,7 +368,7 @@ static void register_typedef_recursive(/*{{{*/
     if (down >= 0)  register_typedef_recursive(down, block, token, bnf, pt, type);
   }
 }/*}}}*/
-extern int search_type_table_by_declare_token( const int token_index , const BNF* bnf , const TYPE* type) {/*{{{*/
+extern int search_type_table_by_declare_token(const int token_index , const BNF* bnf , const TYPE* type) {/*{{{*/
   int type_index;
   const int used_size = type[0].used_size;
   for (type_index=0; type_index<used_size; type_index++) {

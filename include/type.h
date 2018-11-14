@@ -13,5 +13,6 @@ void create_type_table(
 );
 
 int search_type_table_by_declare_token( const int token_index , const BNF* bnf , const TYPE* type);
+void print_type_table(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const TYPE* type);
 
 #endif

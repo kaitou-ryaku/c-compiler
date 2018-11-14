@@ -115,9 +115,9 @@ int main(void) {
     fclose(fp);
   }
 
-  // register_symbol_size(block, token, bnf, pt, type, symbol);
   register_type_and_symbol_size(block, token, bnf, pt, type, symbol);
-  //print_symbol_table_all(token, bnf, pt, symbol);
+  print_type_table(stderr, token, bnf, type);
+  print_symbol_table_all(token, bnf, pt, symbol);
 
   return 0;
 }
