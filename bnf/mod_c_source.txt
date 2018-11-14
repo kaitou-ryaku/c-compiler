@@ -1,2 +1,15 @@
+int a;
+char b;
+
+typedef struct {
+  int  x;
+  char y;
+} HOGE;
+
 typedef int hoge;
-hoge a;
+typedef char piyo;
+
+hoge p;
+piyo q;
+
+HOGE q;

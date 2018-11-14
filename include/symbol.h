@@ -13,6 +13,7 @@ void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, c
 int get_new_array_index(const int* array, const int array_max_size);
 void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt);
 void print_symbol_table_all(const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol);
+int search_symbol_table_by_declare_token(const int token_index, const SYMBOL* symbol);
 
 static const int SYMBOL_TABLE_UNUSED     = -1;
 static const int SYMBOL_TABLE_VARIABLE   = 0;

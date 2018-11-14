@@ -2,7 +2,9 @@
 #include "../include/common.h"
 #include "../include/memory.h"
 #include "../include/symbol.h"
+#include "../include/type.h"
 #include "../include/pt_common.h"
+#include <stdio.h>
 #include <assert.h>
 #include <string.h>
 
@@ -59,29 +61,22 @@ extern void register_type_and_symbol_size(/*{{{*/
   , SYMBOL* symbol
 ) {
   for (int token_index=0; token_index<token[0].used_size; token_index++) {
-    bool is_type_default=false;
-    bool is_type_struct=false;
-    bool is_type_typedef=false;
-    int type_index;
-    for (type_index=0; type_index<type[0].used_size; type_index++) {
-      if (token_index == type[type_index].alias_id) {
-        is_type_typedef=true;
-        break;
-      }
-    }
+    const int type_index = search_type_table_by_declare_token(token_index, bnf, type);
+    const int symbol_index = search_symbol_table_by_declare_token(token_index, symbol);
+    assert((type_index < 0) || (symbol_index < 0));
+    if ((type_index < 0) && (symbol_index < 0)) continue;
 
-    bool is_symbol=false;
-    int symbol_index;
-    for (symbol_index=0; symbol_index<symbol[0].used_size; symbol_index++) {
-      if (token_index == symbol[symbol_index].token_id) {
-        is_symbol=true;
-        break;
-      }
-    }
+    print_token_name(stderr, token[token_index-1]);
+    fprintf(stderr, " <");
+    print_token_name(stderr, token[token_index]);
+    fprintf(stderr, "> ");
+    print_token_name(stderr, token[token_index+1]);
+    fprintf(stderr, "      ");
 
-    const bool is_type   = (is_type_default || is_type_struct || is_type_typedef);
-    if ((!is_type) && (!is_symbol)) continue;
-    if (is_type && is_symbol) assert(0);
+    if (type_index >= 0)  fprintf(stderr, "TYPE\n");
+    if (symbol_index >= 0) fprintf(stderr, "SYMBOL\n");
 
+    // if (0==strcmp("typedef", bnf_name)) is_type_typedef=true;
+    // if (0==strcmp("struct" , bnf_name)) is_type_struct=true;
   }
 }/*}}}*/

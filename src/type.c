@@ -367,4 +367,19 @@ static void register_typedef_recursive(/*{{{*/
     const int down  = pt[pt_top_index].down;
     if (down >= 0)  register_typedef_recursive(down, block, token, bnf, pt, type);
   }
-}
+}/*}}}*/
+extern int search_type_table_by_declare_token( const int token_index , const BNF* bnf , const TYPE* type) {/*{{{*/
+  int type_index;
+  const int used_size = type[0].used_size;
+  for (type_index=0; type_index<used_size; type_index++) {
+    if (type[type_index].token_id >= 0) {
+      if (type[type_index].token_id == token_index) {
+        const char* bnf_name = bnf[type[type_index].bnf_id].name;
+        if ((0==strcmp("typedef", bnf_name)) || (0==strcmp("struct" , bnf_name))) break;
+      }
+    }
+  }
+  if (type_index == used_size) type_index = -1;
+
+  return type_index;
+}/*}}}*/

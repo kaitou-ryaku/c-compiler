@@ -12,4 +12,6 @@ void create_type_table(
   , SYMBOL* member
 );
 
+int search_type_table_by_declare_token( const int token_index , const BNF* bnf , const TYPE* type);
+
 #endif

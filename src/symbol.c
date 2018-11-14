@@ -116,6 +116,7 @@ extern void create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, cons
   empty_symbol_id = create_symbol_function_recursive(empty_symbol_id, block, token, bnf, pt, symbol);
   empty_symbol_id = create_symbol_variable_recursive(empty_symbol_id, 0, block, token, bnf, pt, symbol);
   delete_empty_external_declaration(bnf, pt);
+  for (int i=0; i<empty_symbol_id; i++) symbol[i].used_size = empty_symbol_id;
   print_symbol_table_all(token, bnf, pt, symbol);
 }/*}}}*/
 extern void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
@@ -845,4 +846,14 @@ extern void print_symbol_table_all(const LEX_TOKEN* token, const BNF* bnf, const
     print_symbol_table_line(stderr, i, token, bnf, pt, symbol);
     fprintf(stderr, "\n");
   }
+}/*}}}*/
+extern int search_symbol_table_by_declare_token(const int token_index, const SYMBOL* symbol) {/*{{{*/
+  int symbol_index;
+  const int used_size = symbol[0].used_size;
+  for (symbol_index=0; symbol_index<used_size; symbol_index++) {
+    if (token_index == symbol[symbol_index].token_id) break;
+  }
+  if (symbol_index == used_size) symbol_index = -1;
+
+  return symbol_index;
 }/*}}}*/
