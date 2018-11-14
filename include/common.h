@@ -8,8 +8,8 @@ typedef struct {
   int total_size;
   int used_size;
   int bnf_id;
-  int token_id; // bnf_idがstructかtypedefの場合のみ使用
-  int alias_id; // bnf_idがtypedefの場合のみ使用
+  int token_id; // bnf_idがstructかtypedefの場合のみ使用。LEX_TOKEN配列のindex
+  int alias_id; // bnf_idがtypedefの場合のみ使用。TYPE配列のindex
   int block;
   int byte;  // バイト数
 } TYPE;
@@ -28,7 +28,8 @@ typedef struct {
   int*  array;      // int a; -> 無効  int *a; -> 0   int **a; -> 00  int a[2][3]; -> 23
   int   array_size; // int a; -> 0     int *a; -> 1   int **a; -> 2   int a[2][3]; -> 2
   int   total_array_size;
-  int   byte;    // char:1 int:4
+  int   byte;         // char:1 char[3]:3 int:4
+  int   original_byte;// char:1 char[3]:1 int:4
   int   function_id;  // 引数の場合、親関数のidを入れる
   int   argument_id;  // 引数の場合、何番目の引数か入れる
   int   total_argument; // 関数の場合、引数の個数を入れる

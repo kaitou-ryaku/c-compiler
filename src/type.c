@@ -55,9 +55,6 @@ extern void create_type_table(/*{{{*/
 
   const int type_used_size = search_unused_type_index(type);
   for (int i=0; i<type_used_size; i++) type[i].used_size = type_used_size;
-
-  fprintf(stderr, "\nTYPE TABLE\n");
-  print_type_table(stderr, token, bnf, type);
 }/*}}}*/
 static void initialize_type_table(TYPE* type, const int type_max_size) {/*{{{*/
   for (int i=0; i<type_max_size; i++) {

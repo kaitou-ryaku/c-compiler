@@ -2,7 +2,7 @@ int a;
 char b;
 
 typedef struct {
-  int  x;
+  int  x[3];
   char y;
 } HOGE;
 
@@ -10,6 +10,6 @@ typedef int hoge;
 typedef char piyo;
 
 hoge p;
-piyo q;
+piyo q[7];
 
-HOGE q;
+HOGE *q;

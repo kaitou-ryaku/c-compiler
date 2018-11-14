@@ -117,7 +117,6 @@ extern void create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, cons
   empty_symbol_id = create_symbol_variable_recursive(empty_symbol_id, 0, block, token, bnf, pt, symbol);
   delete_empty_external_declaration(bnf, pt);
   for (int i=0; i<empty_symbol_id; i++) symbol[i].used_size = empty_symbol_id;
-  print_symbol_table_all(token, bnf, pt, symbol);
 }/*}}}*/
 extern void initialize_symbol_table(SYMBOL* symbol, const int symbol_max_size, int* array, const int array_max_size) {/*{{{*/
   for (int i=0; i<array_max_size; i++) {
@@ -143,6 +142,7 @@ static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* a
   symbol[index].array           = array;
   symbol[index].array_size      = -1;
   symbol[index].byte            = -1;
+  symbol[index].original_byte   = -1;
   symbol[index].function_id     = -1;
   symbol[index].argument_id     = -1;
   symbol[index].total_argument  = -1;
@@ -548,6 +548,7 @@ extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   fprintf(fp, "block:%3d ", symbol[line].block);
   fprintf(fp, "addr:%3d ", symbol[line].addr);
   fprintf(fp, "byte:%3d ", symbol[line].byte);
+  fprintf(fp, "original_byte:%3d ", symbol[line].original_byte);
 }/*}}}*/
 static int register_parameter_declaration(/*{{{*/
   const   int argument_id
