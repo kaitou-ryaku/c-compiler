@@ -1,3 +1,4 @@
+#include "../min-bnf-parser/include/text.h"
 #include "../include/common.h"
 #include "../include/pt_common.h"
 #include <string.h>
