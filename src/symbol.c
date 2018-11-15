@@ -860,3 +860,40 @@ extern int search_symbol_table_by_declare_token(const int token_index, const SYM
 
   return symbol_index;
 }/*}}}*/
+extern int search_symbol_table(/*{{{*/
+  const int           token_index
+  , const BLOCK*      block
+  , const LEX_TOKEN*  token
+  , const BNF*        bnf
+  , const PARSE_TREE* pt
+  , const SYMBOL*     symbol
+) {
+  int symbol_index=0;
+  const int used_size = symbol[0].used_size;
+  while (symbol_index<used_size) {
+    const int symbol_token_index = symbol[symbol_index].token_id;
+    if (token_index < symbol_token_index) {
+      symbol_index++;
+      continue;
+    }
+    if (!is_same_token_str(token_index, symbol_token_index, token)) {
+      symbol_index++;
+      continue;
+    }
+
+    const char* storage_name = bnf[pt[symbol[symbol_index].storage].bnf_id].name;
+    if ( (0 != strcmp("static", storage_name))
+      && (0 != strcmp("extern", storage_name))
+      && !(inside_scope(token_index, symbol_token_index, block))
+    ) {
+      symbol_index++;
+      continue;
+    }
+
+    break;
+  }
+
+  assert(symbol_index < used_size);
+
+  return symbol_index;
+}/*}}}*/
