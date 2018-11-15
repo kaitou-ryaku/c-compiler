@@ -6,9 +6,14 @@
 #include "../include/type.h"
 #include "../include/memory.h"
 #include <stdio.h>
+#include <assert.h>
 
 static void read_file(const char* filename, char* str, const int str_max_size);
-int main(void) {
+int main(const int argc, const char** argv) {
+  if (argc != 2) {
+    fprintf(stderr, "Error: No Source File\n");
+    assert(argc == 2);
+  }
 
   static char lex_str[100000];
   static char syntax_str[100000];
@@ -18,7 +23,8 @@ int main(void) {
   // read_file("bnf/kandr.bnf"       , syntax_str, sizeof(syntax_str) / sizeof(char));
   read_file("bnf/mod_c_syntax.bnf", syntax_str, sizeof(syntax_str) / sizeof(char));
   read_file("bnf/mod_c_pair.txt"  , pair_str  , sizeof(pair_str)   / sizeof(char));
-  read_file("bnf/mod_c_source.txt", source_str, sizeof(source_str) / sizeof(char));
+  //read_file("bnf/mod_c_source.txt", source_str, sizeof(source_str) / sizeof(char));
+  read_file(argv[1]               , source_str, sizeof(source_str) / sizeof(char));
 
   BNF bnf[255]; // char:255文字のアルファベットに対応
   initialize_bnf(bnf, sizeof(bnf)/sizeof(BNF));
