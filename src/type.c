@@ -71,6 +71,10 @@ static void initialize_type_table(TYPE* type, const int type_max_size) {/*{{{*/
 static int register_default_type(const BNF* bnf, TYPE* type) {/*{{{*/
   int i=0;
 
+  type[i].bnf_id = search_lex_bnf(bnf, "void");
+  type[i].byte  = 0;
+  i++;
+
   type[i].bnf_id = search_lex_bnf(bnf, "char");
   type[i].byte  = 1;
   i++;
