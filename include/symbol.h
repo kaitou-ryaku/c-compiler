@@ -12,7 +12,7 @@ int search_unused_symbol_index(const SYMBOL* symbol);
 void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol);
 int get_new_array_index(const int* array, const int array_max_size);
 void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt);
-void print_symbol_table_all(const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol);
+void print_symbol_table_all(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol);
 int search_symbol_table_by_declare_token(const int token_index, const SYMBOL* symbol);
 int search_symbol_table(const int token_index, const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol);
 

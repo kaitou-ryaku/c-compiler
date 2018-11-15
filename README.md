@@ -1,4 +1,11 @@
-# c-compiler
+# Yet another hierarchical C compiler
+
+### Dependence
+
+This repository depends on
+
+* git@github.com:kaitou-ryaku/min-bnf-parser.git
+* git@github.com:kaitou-ryaku/min-regex.git
 
 ### Clone
 
@@ -25,10 +32,19 @@ $ make
 $ ./compiler.out <SOURCE_FILE>
 ```
 
-### Syntax and Abstruct-Tree
+Following files are to be sequentially created.
+
+* `syntax.dot`
+* `token_list.txt`
+* `parse_tree.dot`
+* `table.txt`
+* `abstruct_tree.dot`
+
+### Syntax-Graph and Tree
 
 ```sh
 $ dot -Gdpi=300 -T png parse_tree.dot -o parse_tree.png
+$ dot -Gdpi=300 -T png abstruct_tree.dot -o parse_tree.png
 $ dot -Gdpi=100 -T png syntax.dot -o syntax.png
 ```
 

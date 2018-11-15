@@ -843,11 +843,10 @@ extern int search_unused_symbol_index(const SYMBOL* symbol) {/*{{{*/
   }
   return ret;
 }/*}}}*/
-extern void print_symbol_table_all(const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol) {/*{{{*/
-  fprintf(stderr, "\nSYMBOL TABLE\n");
+extern void print_symbol_table_all(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol) {/*{{{*/
   for (int i=0; symbol[i].kind != SYMBOL_TABLE_UNUSED; i++) {
-    print_symbol_table_line(stderr, i, token, bnf, pt, symbol);
-    fprintf(stderr, "\n");
+    print_symbol_table_line(fp, i, token, bnf, pt, symbol);
+    fprintf(fp, "\n");
   }
 }/*}}}*/
 extern int search_symbol_table_by_declare_token(const int token_index, const SYMBOL* symbol) {/*{{{*/

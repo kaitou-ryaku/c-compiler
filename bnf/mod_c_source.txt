@@ -9,7 +9,9 @@ typedef struct {
 typedef int hoge;
 typedef char piyo;
 
-hoge p;
-piyo q[7];
+int func(void) {
+  hoge p = 3;
+  piyo q[7] = (char*) &p;
 
-HOGE *q;
+  HOGE *q = {{1,2,3},'a'};
+}
