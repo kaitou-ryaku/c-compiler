@@ -216,9 +216,12 @@ static bool two_operatir_to_binary_tree_recursive(const int top, PARSE_TREE* pt,
     }
 
     else if (pt[top].down >= 0) {
-      assert(pt[pt[top].down].right < 0);
-      is_change = delete_lift_solitary_pt(top, pt);
-      two_operatir_to_binary_tree_recursive(pt[top].down, pt, bnf);
+      if (pt[pt[top].down].right < 0) {
+        assert(is_pt_name("CAST_EXPRESSION", pt[top], bnf));
+      } else {
+        is_change = delete_lift_solitary_pt(top, pt);
+        two_operatir_to_binary_tree_recursive(pt[top].down, pt, bnf);
+      }
     }
 
     else if (pt[top].down < 0) {
