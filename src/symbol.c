@@ -143,6 +143,7 @@ static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* a
   symbol[index].array_size      = -1;
   symbol[index].byte            = -1;
   symbol[index].original_byte   = -1;
+  symbol[index].struct_offset   = -1;
   symbol[index].function_id     = -1;
   symbol[index].argument_id     = -1;
   symbol[index].total_argument  = -1;
@@ -549,6 +550,7 @@ extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   fprintf(fp, "addr:%3d ", symbol[line].addr);
   fprintf(fp, "byte:%3d ", symbol[line].byte);
   fprintf(fp, "original_byte:%3d ", symbol[line].original_byte);
+  fprintf(fp, "struct_offset:%3d ", symbol[line].struct_offset);
 }/*}}}*/
 static int register_parameter_declaration(/*{{{*/
   const   int argument_id

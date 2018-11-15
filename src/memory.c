@@ -10,7 +10,17 @@
 
 static const int ADDRESS_BYTE=8;
 static void register_typedef_size(const int type_index, TYPE* type);
-static void register_symbol_size(const int symbol_index, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const TYPE* type, SYMBOL* symbol);
+static int register_symbol_size(const int symbol_index, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const TYPE* type, SYMBOL* symbol);
+static int register_struct_size(
+  const int token_struct_index
+  , const int type_index
+  , const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , const PARSE_TREE* pt
+  , TYPE* type
+  , SYMBOL* symbol
+);
 
 extern int sizeof_symbol_array(const int byte, const int* array, const int array_size) {/*{{{*/
   int ret;
@@ -72,6 +82,8 @@ extern void register_type_and_symbol_size(/*{{{*/
         register_typedef_size(type_index, type);
 
       } else if (strcmp("struct", bnf_name)==0) {
+        token_index = register_struct_size(token_index, type_index, block, token, bnf, pt, type, symbol);
+
 
       } else {
         assert(0);
@@ -100,7 +112,7 @@ static void register_typedef_size(const int type_index, TYPE* type) {/*{{{*/
   }
   assert(origin_type_index < type[0].used_size);
 }/*}}}*/
-static void register_symbol_size(const int symbol_index, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const TYPE* type, SYMBOL* symbol) {/*{{{*/
+static int register_symbol_size(const int symbol_index, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const TYPE* type, SYMBOL* symbol) {/*{{{*/
   assert(symbol[symbol_index].type >= 0);
 
   if (0==strcmp("typedef_name", bnf[pt[symbol[symbol_index].type].bnf_id].name)) {
@@ -132,4 +144,46 @@ static void register_symbol_size(const int symbol_index, const LEX_TOKEN* token,
     }
     assert(origin_type_index < type[0].used_size);
   }
+
+  return symbol[symbol_index].byte;
+}/*}}}*/
+static int register_struct_size(/*{{{*/
+  const int token_struct_index
+  , const int type_index
+  , const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , const PARSE_TREE* pt
+  , TYPE* type
+  , SYMBOL* symbol
+) {
+
+  assert(token_struct_index >= 0);
+  assert(type_index >= 0);
+  const int out_block = block[token_struct_index].here;
+
+  // structの後の{まで移動
+  int token_index = token_struct_index;
+  while ((token_index < token[0].used_size) && block[token_index].here == out_block) {
+    token_index++;
+  }
+  assert(token_index < token[0].used_size);
+
+  // 構造体メンバのサイズをシンボルテーブルに登録
+  int offset = 0;
+  while ((token_index < token[0].used_size) && (block[token_index].here != out_block)) {
+    const int symbol_index = search_symbol_table_by_declare_token(token_index, symbol);
+    if (symbol_index >= 0) {
+      assert(symbol[symbol_index].byte < 0);
+      const int byte = register_symbol_size(symbol_index, token, bnf, pt, type, symbol);
+      assert(byte >= 0);
+      symbol[symbol_index].struct_offset = offset;
+      offset = offset+byte;
+    }
+    token_index++;
+  }
+  assert(token_index < token[0].used_size);
+  type[type_index].byte = offset;
+
+  return token_index;
 }/*}}}*/
