@@ -104,20 +104,20 @@ int main(void) {
   print_type_table(stderr, token, bnf, type);
   print_symbol_table_all(token, bnf, pt, symbol);
 
-  //translate_pt_to_ast(pt, bnf);
-  //print_parse_tree(stderr, pt_size, pt, bnf, token);
+  translate_pt_to_ast(pt, bnf);
+  print_parse_tree(stderr, pt_size, pt, bnf, token);
 
-  //{
-  //  FILE *fp;
-  //  char *filename = "parse_tree.dot";
-  //  if ((fp = fopen(filename, "w")) == NULL) {
-  //    fprintf(stderr, "Error: Failed to open %s\n", filename);
-  //  }
+  {
+    FILE *fp;
+    char *filename = "parse_tree.dot";
+    if ((fp = fopen(filename, "w")) == NULL) {
+      fprintf(stderr, "Error: Failed to open %s\n", filename);
+    }
 
-  //  origin_parse_tree_to_dot(fp, 0, pt, bnf, token, "12.0", NULL, "#FF0000", "#000000");
+    origin_parse_tree_to_dot(fp, 0, pt, bnf, token, "12.0", NULL, "#FF0000", "#000000");
 
-  //  fclose(fp);
-  //}
+    fclose(fp);
+  }
 
   return 0;
 }
