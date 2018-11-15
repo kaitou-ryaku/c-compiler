@@ -116,11 +116,11 @@ static bool delete_solitary_container_recursive(const int top, PARSE_TREE* pt, c
     || is_pt_name("CAST_EXPRESSION"           , pt[top], bnf)
     || is_pt_name("UNARY_EXPRESSION"          , pt[top], bnf)
     || is_pt_name("POSTFIX_EXPRESSION"        , pt[top], bnf)
-    || is_pt_name("ARGUMENT_EXPRESSION_LIST"  , pt[top], bnf)
+
     || is_pt_name("PRIMARY_EXPRESSION"        , pt[top], bnf)
     || is_pt_name("EXPRESSION"                , pt[top], bnf)
     || is_pt_name("ASSIGNMENT_EXPRESSION"     , pt[top], bnf)
-    || is_pt_name("COMPOUND_STATEMENT"        , pt[top], bnf)
+
     || is_pt_name("STATEMENT"                 , pt[top], bnf)
     || is_pt_name("LABELED_STATEMENT"         , pt[top], bnf)
     || is_pt_name("EXPRESSION_STATEMENT"      , pt[top], bnf)
