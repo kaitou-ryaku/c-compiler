@@ -9,8 +9,17 @@
 #include <string.h>
 
 static const int ADDRESS_BYTE=8;
+
+// 関数プロトタイプ/*{{{*/
 static void register_typedef_size(const int type_index, TYPE* type);
-static int register_symbol_size(const int symbol_index, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const TYPE* type, SYMBOL* symbol);
+static int register_symbol_size(
+  const int symbol_index
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , const PARSE_TREE* pt
+  , const TYPE* type
+  , SYMBOL* symbol
+);
 static int register_struct_size(
   const int token_struct_index
   , const int type_index
@@ -21,7 +30,7 @@ static int register_struct_size(
   , TYPE* type
   , SYMBOL* symbol
 );
-
+/*}}}*/
 extern int sizeof_symbol_array(const int byte, const int* array, const int array_size) {/*{{{*/
   int ret;
 
@@ -83,7 +92,6 @@ extern void register_type_and_symbol_size(/*{{{*/
 
       } else if (strcmp("struct", bnf_name)==0) {
         token_index = register_struct_size(token_index, type_index, block, token, bnf, pt, type, symbol);
-
 
       } else {
         assert(0);
@@ -185,5 +193,5 @@ static int register_struct_size(/*{{{*/
   assert(token_index < token[0].used_size);
   type[type_index].byte = offset;
 
-  return token_index;
+  return token_index-1;
 }/*}}}*/
