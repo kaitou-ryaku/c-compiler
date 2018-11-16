@@ -1,4 +1,4 @@
-# Yet another hierarchical C compiler
+# Yet Another Hierarchical C Compiler
 
 ### Dependence
 
@@ -10,8 +10,8 @@ This repository depends on
 ### Clone
 
 ```sh
-$ git clone git@github.com:kaitou-ryaku/c-compiler.git
-$ cd c-compiler
+$ git clone git@github.com:kaitou-ryaku/yahcc.git
+$ cd yahcc
 $ git clone git@github.com:kaitou-ryaku/min-bnf-parser.git
 $ cd min-bnf-parser
 $ git clone git@github.com:kaitou-ryaku/min-regex.git
@@ -21,7 +21,7 @@ $ git clone git@github.com:kaitou-ryaku/min-regex.git
 
 ```sh
 $ pwd
-/path/to/c-compiler
+/path/to/yahcc
 
 $ make
 ```
@@ -40,7 +40,7 @@ Following files are to be sequentially created.
 * `table.txt`
 * `abstruct_tree.dot`
 
-### Syntax-Graph and Tree
+### Syntax-Graph and Parse-Tree
 
 ```sh
 $ dot -Gdpi=300 -T png parse_tree.dot -o parse_tree.png
