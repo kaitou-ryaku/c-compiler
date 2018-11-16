@@ -5,6 +5,7 @@
 #include "../include/typedef.h"
 #include "../include/type.h"
 #include "../include/memory.h"
+#include "../include/code.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -135,6 +136,16 @@ int main(const int argc, const char** argv) {
   fclose(fp);
   fprintf(stderr, "L:%03d DONE: write abstruct_tree.dot\n", __LINE__);
 
+  static char code[100000];
+  generate_code(code, sizeof(code)/sizeof(char), block, token, bnf, pt, symbol);
+  fprintf(stderr, "L:%03d DONE: generate code\n", __LINE__);
+
+  if ((fp = fopen("code.asm", "w")) == NULL) assert(0);
+  fprintf(fp, code);
+  fclose(fp);
+  fprintf(stderr, "L:%03d DONE: write code.asm\n", __LINE__);
+
+  fprintf(stderr, "L:%03d DONE: all\n", __LINE__);
   return 0;
 }
 
