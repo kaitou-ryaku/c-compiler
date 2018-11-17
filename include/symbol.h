@@ -24,7 +24,30 @@ static const int SYMBOL_TABLE_PROTOTYPE  = 3;
 static const int SYMBOL_TABLE_P_ARGUMENT = 4;
 static const int SYMBOL_TABLE_STRUCT_MEMBER = 5;
 
-static const int ARRAY_TYPE_POINTER = 0;
-static const int ARRAY_TYPE_UNDEFINED = -2;
+static const int ARRAY_TYPE_POINTER       = 0;
+static const int ARRAY_TYPE_UNDEFINED     = -2;
+
+static const int SYMBOL_TYPE_SIGNED       = 0;
+static const int SYMBOL_TYPE_UNSIGNED     = 1;
+
+static const int SYMBOL_TYPE_MEDIUM       = 0;
+static const int SYMBOL_TYPE_SHORT        = 1;
+static const int SYMBOL_TYPE_LONG         = 2;
+
+static const int SYMBOL_TYPE_INT          = 0;
+static const int SYMBOL_TYPE_VOID         = 1;
+static const int SYMBOL_TYPE_CHAR         = 2;
+static const int SYMBOL_TYPE_FLOAT        = 3;
+static const int SYMBOL_TYPE_DOUBLE       = 4;
+static const int SYMBOL_TYPE_STRUCT       = 5;
+static const int SYMBOL_TYPE_TYPEDEF_NAME = 6;
+
+static const int SYMBOL_STORAGE_AUTO      = 0;
+static const int SYMBOL_STORAGE_STATIC    = 1;
+static const int SYMBOL_STORAGE_EXTERN    = 2;
+static const int SYMBOL_STORAGE_REGISTER  = 3;
+
+static const int SYMBOL_QUALIFIER_VOLATILE = 0;
+static const int SYMBOL_QUALIFIER_CONST    = 1;
 
 #endif

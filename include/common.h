@@ -20,9 +20,12 @@ typedef struct {
   int   used_size;
   int   token_id;
   int   kind; // 関数引数、変数、プロトタイプ等を表すSYMBOL_TABLE_*の値
-  int   type;    // int, char, typedef_keywordのpt_id
-  int   storage; // static, externのtoken_id
-  int   qualify; // const, volatileのtoken_id
+  int   type_length;// long, short, 何もなしの整数値。詳細はsymbol.h内のconst変数で定義
+  int   type_sign;  // signed, unsignedの整数値。詳細はsymbol.h内のconst変数で定義
+  int   type_body;  // int, char, typedef_keywordの整数値。詳細はsymbol.h内のconst変数で定義
+  int   typedef_id; // typedef_keywordの整数値。詳細はsymbol.h内のconst変数で定義
+  int   storage; // static, externの整数値。詳細はsymbol.h内のconst変数で定義
+  int   qualifier; // const, volatileの整数値。詳細はsymbol.h内のconst変数で定義
   int   block; // ローカル変数なら属する{}, 関数定義の引数なら関数の{}, 関数プロトタイプの引数なら0
   int   address; // 静的変数の絶対アドレスbyte、自動変数のスタックオフセットbyte、構造体のオフセットのbyte数
   int*  array;      // int a; -> 無効  int *a; -> 0   int **a; -> 00  int a[2][3]; -> 23
