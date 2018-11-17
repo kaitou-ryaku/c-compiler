@@ -34,6 +34,7 @@ $(TARGET): $(ARCHIVE) $(PARSER) $(REGEX) src/main.c
 
 .PHONY: clean
 clean:
-	rm -rf *.a *.out *.stackdump *.dot *.png
+	rm -rf *.a *.out *.stackdump *.dot *.png *.asm table.txt token_list.txt GPATH GRTAGS GTAGS
+	rm -rf script/*.o script/*.asm
 	cd object && rm -rf *.o *.d
 	cd min-bnf-parser && $(MAKE) clean

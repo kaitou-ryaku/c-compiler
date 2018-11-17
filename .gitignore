@@ -8,3 +8,6 @@
 *.png
 *.txt
 *.stackdump
+GPATH
+GRTAGS
+GTAGS
