@@ -138,12 +138,11 @@ static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* a
   symbol[index].storage         = -1;
   symbol[index].qualify         = -1;
   symbol[index].block           = -1;
-  symbol[index].addr            = -1;
+  symbol[index].address         = -1;
   symbol[index].array           = array;
   symbol[index].array_size      = -1;
   symbol[index].byte            = -1;
   symbol[index].original_byte   = -1;
-  symbol[index].struct_offset   = -1;
   symbol[index].function_id     = -1;
   symbol[index].argument_id     = -1;
   symbol[index].total_argument  = -1;
@@ -547,10 +546,9 @@ extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   for (int i=0; i<rest; i++) fprintf(fp, " ");
 
   fprintf(fp, "block:%3d ", symbol[line].block);
-  fprintf(fp, "addr:%3d ", symbol[line].addr);
+  fprintf(fp, "address:%3d ", symbol[line].address);
   fprintf(fp, "byte:%3d ", symbol[line].byte);
   fprintf(fp, "original_byte:%3d ", symbol[line].original_byte);
-  fprintf(fp, "struct_offset:%3d ", symbol[line].struct_offset);
 }/*}}}*/
 static int register_parameter_declaration(/*{{{*/
   const   int argument_id

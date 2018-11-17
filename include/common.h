@@ -24,13 +24,12 @@ typedef struct {
   int   storage; // static, externのtoken_id
   int   qualify; // const, volatileのtoken_id
   int   block; // ローカル変数なら属する{}, 関数定義の引数なら関数の{}, 関数プロトタイプの引数なら0
-  int   addr;
+  int   address; // 静的変数の絶対アドレスbyte、自動変数のスタックオフセットbyte、構造体のオフセットのbyte数
   int*  array;      // int a; -> 無効  int *a; -> 0   int **a; -> 00  int a[2][3]; -> 23
   int   array_size; // int a; -> 0     int *a; -> 1   int **a; -> 2   int a[2][3]; -> 2
   int   total_array_size;
   int   byte;         // char:1 char[3]:3 int:4
   int   original_byte;// char:1 char[3]:1 int:4
-  int   struct_offset;// 構造体のオフセットのbyte数
   int   function_id;  // 引数の場合、親関数のidを入れる
   int   argument_id;  // 引数の場合、何番目の引数か入れる
   int   total_argument; // 関数の場合、引数の個数を入れる

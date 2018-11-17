@@ -185,7 +185,7 @@ static int register_struct_size(/*{{{*/
       assert(symbol[symbol_index].byte < 0);
       const int byte = register_symbol_size(symbol_index, token, bnf, pt, type, symbol);
       assert(byte >= 0);
-      symbol[symbol_index].struct_offset = offset;
+      symbol[symbol_index].address = offset;
       offset = offset+byte;
     }
     token_index++;
