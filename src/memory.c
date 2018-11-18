@@ -39,6 +39,8 @@ static void register_type_and_symbol_size(
   , SYMBOL* symbol
 );
 static void fix_default_storage_class(SYMBOL* symbol);
+static void register_local_variable_address(SYMBOL* symbol);
+static void register_local_argument_address(SYMBOL* symbol);
 /*}}}*/
 extern int sizeof_symbol_array(const int byte, const int* array, const int array_size) {/*{{{*/
   int ret;
@@ -86,6 +88,8 @@ extern void format_type_and_symbol_table(/*{{{*/
 ) {
   register_type_and_symbol_size(block, token, bnf, pt, type, symbol);
   fix_default_storage_class(symbol);
+  register_local_variable_address(symbol);
+  register_local_argument_address(symbol);
 }/*}}}*/
 static void register_type_and_symbol_size(/*{{{*/
   const BLOCK* block
@@ -269,5 +273,32 @@ static void fix_default_storage_class(SYMBOL* symbol) {/*{{{*/
       assert(symbol[line].token_id >= 0);
       assert(symbol[line].storage == SYMBOL_STORAGE_AUTO);
     }/*}}}*/
+  }
+}/*}}}*/
+static void register_local_variable_address(SYMBOL* symbol) {/*{{{*/
+  for (int func=0; func<symbol[0].used_size; func++) {
+    int address = 0;
+    if (symbol[func].kind == SYMBOL_TABLE_FUNCTION) {
+      for (int var=0; var<symbol[0].used_size; var++) {
+        if ((symbol[var].kind == SYMBOL_TABLE_VARIABLE) && (symbol[var].storage == SYMBOL_STORAGE_AUTO) && (symbol[var].function_id == func)) {
+          symbol[var].address = address;
+          address += symbol[var].byte;
+        }
+      }
+    }
+  }
+}/*}}}*/
+static void register_local_argument_address(SYMBOL* symbol) {/*{{{*/
+  for (int func=0; func<symbol[0].used_size; func++) {
+    int address = ADDRESS_BYTE; // cdecl既約で、直近のアドレスには関数の呼び出し元アドレスが入る。引数はそれ以前にスタックに積まれた値を参照
+    if (symbol[func].kind == SYMBOL_TABLE_FUNCTION) {
+      for (int arg=0; arg<symbol[0].used_size; arg++) {
+        if ((symbol[arg].kind == SYMBOL_TABLE_F_ARGUMENT) && (symbol[arg].function_id == func)) {
+          assert(symbol[arg].storage == SYMBOL_STORAGE_AUTO);
+          address += symbol[arg].byte;
+          symbol[arg].address = address;
+        }
+      }
+    }
   }
 }/*}}}*/

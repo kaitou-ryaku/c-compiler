@@ -24,7 +24,7 @@ static int sfb(int sab) {
   int c2;
 }
 
-int fc(int ac) {
+int fc(int ac1, char ac2, double ac3) {
   extern int ea3;
   static int sb3;
   int c3;
