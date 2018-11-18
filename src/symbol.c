@@ -1018,6 +1018,7 @@ static int register_variable_function_id(/*{{{*/
 
   symbol[0].used_size = symbol_empty_id; // これがないとテーブルを検索できない
   const int function_id = search_symbol_table_by_declare_token(pt[identifier].token_begin_index, symbol);
+  assert(function_id >= 0);
   symbol[symbol_empty_id].function_id = function_id;
   return symbol_empty_id+1;
 }/*}}}*/

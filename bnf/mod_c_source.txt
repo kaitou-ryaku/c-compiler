@@ -28,4 +28,7 @@ int fc(int ac1, char ac2, double ac3) {
   extern int ea3;
   static int sb3;
   int c3;
+  int d3;
+  int e3;
+  int f3;
 }
