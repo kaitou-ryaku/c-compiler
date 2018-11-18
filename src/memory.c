@@ -138,39 +138,42 @@ static void register_typedef_size(const int type_index, TYPE* type) {/*{{{*/
   assert(origin_type_index < type[0].used_size);
 }/*}}}*/
 static int register_symbol_size(const int symbol_index, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const TYPE* type, SYMBOL* symbol) {/*{{{*/
-//  assert(symbol[symbol_index].type >= 0);
-//
-//  if (0==strcmp("typedef_name", bnf[pt[symbol[symbol_index].type].bnf_id].name)) {
-//    const int symbol_token_id = pt[symbol[symbol_index].type].token_begin_index;
-//
-//    int origin_type_index=0;
-//    while (origin_type_index < type[0].used_size) {
-//      const int origin_token_id = type[origin_type_index].token_id;
-//      if (is_same_token_str(symbol_token_id, origin_token_id, token)) {
-//        const int byte = type[origin_type_index].byte;
-//        symbol[symbol_index].original_byte = byte;
-//        symbol[symbol_index].byte = sizeof_symbol_array(byte, symbol[symbol_index].array, symbol[symbol_index].array_size);
-//        break;
-//      }
-//      origin_type_index++;
-//    }
-//    assert(origin_type_index < type[0].used_size);
-//
-//  } else {
-//    int origin_type_index=0;
-//    while (origin_type_index < type[0].used_size) {
-//      if (pt[symbol[symbol_index].type].bnf_id == type[origin_type_index].bnf_id) {
-//        const int byte = type[origin_type_index].byte;
-//        symbol[symbol_index].original_byte = byte;
-//        symbol[symbol_index].byte = sizeof_symbol_array(byte, symbol[symbol_index].array, symbol[symbol_index].array_size);
-//        break;
-//      }
-//      origin_type_index++;
-//    }
-//    assert(origin_type_index < type[0].used_size);
-//  }
-//
-//  return symbol[symbol_index].byte;
+  assert(symbol[symbol_index].body_token_id >= 0);
+
+  if (symbol[symbol_index].type_body == SYMBOL_TYPE_TYPEDEF_NAME) {
+    const int symbol_token_id = symbol[symbol_index].body_token_id;
+
+    int origin_type_index=0;
+    while (origin_type_index < type[0].used_size) {
+      const int origin_token_id = type[origin_type_index].token_id;
+      if (is_same_token_str(symbol_token_id, origin_token_id, token)) {
+        const int byte = type[origin_type_index].byte;
+        symbol[symbol_index].original_byte = byte;
+        symbol[symbol_index].byte = sizeof_symbol_array(byte, symbol[symbol_index].array, symbol[symbol_index].array_size);
+        break;
+      }
+      origin_type_index++;
+    }
+    assert(origin_type_index < type[0].used_size);
+
+  } else {
+    int origin_type_index=0;
+    while (origin_type_index < type[0].used_size) {
+      if ( (symbol[symbol_index].type_body   == type[origin_type_index].body)
+        && (symbol[symbol_index].type_sign   == type[origin_type_index].sign)
+        && (symbol[symbol_index].type_length == type[origin_type_index].length)
+      ) {
+        const int byte = type[origin_type_index].byte;
+        symbol[symbol_index].original_byte = byte;
+        symbol[symbol_index].byte = sizeof_symbol_array(byte, symbol[symbol_index].array, symbol[symbol_index].array_size);
+        break;
+      }
+      origin_type_index++;
+    }
+    assert(origin_type_index < type[0].used_size);
+  }
+
+  return symbol[symbol_index].byte;
   return 0;
 }/*}}}*/
 static int register_struct_size(/*{{{*/
