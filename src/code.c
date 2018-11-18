@@ -96,7 +96,7 @@ static void generate_code_global_variable(/*{{{*/
     const int storage = symbol[line].storage;
 
     if ((kind == SYMBOL_TABLE_VARIABLE) && (storage == SYMBOL_STORAGE_STATIC)) {
-      length = snprintf(code, *code_rest_size, "%s\n", token[symbol[line].token_id].name);
+      length = snprintf(code, *code_rest_size, "_%s times %d db 0\n", token[symbol[line].token_id].name, symbol[line].byte);
       *code_rest_size -= length;
       code = &(code[length]);
     }
