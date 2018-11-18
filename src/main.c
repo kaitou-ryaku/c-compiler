@@ -78,7 +78,8 @@ int main(const int argc, const char** argv) {
   print_pair_bnf(stderr, pair_bnf, bnf);
 
   static LEX_TOKEN token[1000];
-  const int token_size = match_lexer(token, sizeof(token)/sizeof(LEX_TOKEN), bnf, source_str);
+  static char name_array[100000];
+  const int token_size = match_lexer(token, sizeof(token)/sizeof(LEX_TOKEN), name_array, sizeof(name_array)/sizeof(char), bnf, source_str);
   fprintf(stderr, "L:%03d DONE: lexical analysis. Token list size:%d\n", __LINE__, token_size);
 
   static BLOCK block[10000];
