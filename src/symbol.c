@@ -138,6 +138,7 @@ static void initialize_symbol_table_unit(SYMBOL* symbol, const int index, int* a
   symbol[index].type_sign       = SYMBOL_TYPE_SIGNED;
   symbol[index].type_body       = SYMBOL_TYPE_INT;
   symbol[index].typedef_id      = -1;
+  symbol[index].body_token_id   = -1;
   symbol[index].storage         = SYMBOL_STORAGE_AUTO;
   symbol[index].qualifier       = SYMBOL_QUALIFIER_VOLATILE;
   symbol[index].block           = -1;
@@ -616,45 +617,96 @@ static void register_type(/*{{{*/
 
   while (specifier >= 0) {
     if (is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
-      while (specifier >= 0 && is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
-        const int keyword = pt[specifier].down;
-        assert(keyword >= 0);
-        if (is_pt_name("signed"       , pt[keyword], bnf)) symbol[symbol_empty_id].type_sign   = SYMBOL_TYPE_SIGNED;
-        if (is_pt_name("unsigned"     , pt[keyword], bnf)) symbol[symbol_empty_id].type_sign   = SYMBOL_TYPE_UNSIGNED;
-
-        if (is_pt_name("short"        , pt[keyword], bnf)) symbol[symbol_empty_id].type_length = SYMBOL_TYPE_SHORT;
-        if (is_pt_name("long"         , pt[keyword], bnf)) symbol[symbol_empty_id].type_length = SYMBOL_TYPE_LONG;
-
-        if (is_pt_name("int"          , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_INT;
-        if (is_pt_name("void"         , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_VOID;
-        if (is_pt_name("char"         , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_CHAR;
-        if (is_pt_name("float"        , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_FLOAT;
-        if (is_pt_name("double"       , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_DOUBLE;
-        if (is_pt_name("struct"       , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_STRUCT;
-        if (is_pt_name("typedef_name" , pt[keyword], bnf)) {
-          symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_TYPEDEF_NAME;
-          symbol[symbol_empty_id].typedef_id  = keyword;
-        }
-        specifier = pt[specifier].right;
-      }
-    }
-    else if (is_pt_name("STORAGE_CLASS_SPECIFIER", pt[specifier], bnf)) {
-      const int keyword = pt[specifier].down;
-      assert(keyword >= 0);
-      if (is_pt_name("auto"    , pt[keyword], bnf)) symbol[symbol_empty_id].storage = SYMBOL_STORAGE_AUTO;
-      if (is_pt_name("static"  , pt[keyword], bnf)) symbol[symbol_empty_id].storage = SYMBOL_STORAGE_STATIC;
-      if (is_pt_name("extern"  , pt[keyword], bnf)) symbol[symbol_empty_id].storage = SYMBOL_STORAGE_EXTERN;
-      if (is_pt_name("register", pt[keyword], bnf)) symbol[symbol_empty_id].storage = SYMBOL_STORAGE_REGISTER;
-      specifier = pt[specifier].right;
-    }
-    else if (is_pt_name("TYPE_QUALIFIER", pt[specifier], bnf)) {
-      const int keyword = pt[specifier].down;
-      assert(keyword >= 0);
-      if (is_pt_name("volatile", pt[keyword], bnf)) symbol[symbol_empty_id].qualifier = SYMBOL_QUALIFIER_VOLATILE;
-      if (is_pt_name("const"   , pt[keyword], bnf)) symbol[symbol_empty_id].qualifier = SYMBOL_QUALIFIER_CONST;
-      specifier = pt[specifier].right;
+      specifier = register_type_specifier(symbol_empty_id, specifier, bnf, pt, symbol);
+    } else if (is_pt_name("STORAGE_CLASS_SPECIFIER", pt[specifier], bnf)) {
+      specifier = register_storage_class_specifier(symbol_empty_id, specifier, bnf, pt, symbol);
+    } else if (is_pt_name("TYPE_QUALIFIER", pt[specifier], bnf)) {
+      specifier = register_type_qualifier(symbol_empty_id, specifier, bnf, pt, symbol);
+    } else {
+      assert(0);
     }
   }
+}/*}}}*/
+extern int register_type_specifier(/*{{{*/
+  const   int symbol_empty_id
+  , const int type_specifier
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+  assert(type_specifier >= 0);
+  assert(is_pt_name("TYPE_SPECIFIER", pt[type_specifier], bnf));
+
+  int specifier = type_specifier;
+  while (specifier >= 0 && is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
+    const int keyword = pt[specifier].down;
+    assert(keyword >= 0);
+    if (is_pt_name("signed"       , pt[keyword], bnf)) symbol[symbol_empty_id].type_sign   = SYMBOL_TYPE_SIGNED;
+    if (is_pt_name("unsigned"     , pt[keyword], bnf)) symbol[symbol_empty_id].type_sign   = SYMBOL_TYPE_UNSIGNED;
+
+    if (is_pt_name("short"        , pt[keyword], bnf)) symbol[symbol_empty_id].type_length = SYMBOL_TYPE_SHORT;
+    if (is_pt_name("long"         , pt[keyword], bnf)) symbol[symbol_empty_id].type_length = SYMBOL_TYPE_LONG;
+
+    if (is_pt_name("int"          , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_INT;
+    if (is_pt_name("void"         , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_VOID;
+    if (is_pt_name("char"         , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_CHAR;
+    if (is_pt_name("float"        , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_FLOAT;
+    if (is_pt_name("double"       , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_DOUBLE;
+    if (is_pt_name("struct"       , pt[keyword], bnf)) symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_STRUCT;
+    if (is_pt_name("typedef_name" , pt[keyword], bnf)) {
+      symbol[symbol_empty_id].type_body   = SYMBOL_TYPE_TYPEDEF_NAME;
+      symbol[symbol_empty_id].typedef_id  = keyword;
+    }
+
+    if ( is_pt_name("int"          , pt[keyword], bnf)
+      || is_pt_name("void"         , pt[keyword], bnf)
+      || is_pt_name("char"         , pt[keyword], bnf)
+      || is_pt_name("float"        , pt[keyword], bnf)
+      || is_pt_name("double"       , pt[keyword], bnf)
+      || is_pt_name("struct"       , pt[keyword], bnf)
+      || is_pt_name("typedef_name" , pt[keyword], bnf)
+    ) {
+      symbol[symbol_empty_id].body_token_id = pt[keyword].token_begin_index;
+    }
+
+    specifier = pt[specifier].right;
+  }
+
+  return specifier;
+}/*}}}*/
+extern int register_storage_class_specifier(/*{{{*/
+  const   int symbol_empty_id
+  , const int storage_class_specifier
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+  assert(storage_class_specifier >= 0);
+  assert(is_pt_name("STORAGE_CLASS_SPECIFIER", pt[storage_class_specifier], bnf));
+
+  const int keyword = pt[storage_class_specifier].down;
+  assert(keyword >= 0);
+  if (is_pt_name("auto"    , pt[keyword], bnf)) symbol[symbol_empty_id].storage = SYMBOL_STORAGE_AUTO;
+  if (is_pt_name("static"  , pt[keyword], bnf)) symbol[symbol_empty_id].storage = SYMBOL_STORAGE_STATIC;
+  if (is_pt_name("extern"  , pt[keyword], bnf)) symbol[symbol_empty_id].storage = SYMBOL_STORAGE_EXTERN;
+  if (is_pt_name("register", pt[keyword], bnf)) symbol[symbol_empty_id].storage = SYMBOL_STORAGE_REGISTER;
+  return pt[storage_class_specifier].right;
+}/*}}}*/
+extern int register_type_qualifier(/*{{{*/
+  const   int symbol_empty_id
+  , const int type_qualifier
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+  assert(type_qualifier >= 0);
+  assert(is_pt_name("TYPE_QUALIFIER", pt[type_qualifier], bnf));
+
+  const int keyword = pt[type_qualifier].down;
+  assert(keyword >= 0);
+  if (is_pt_name("volatile", pt[keyword], bnf)) symbol[symbol_empty_id].qualifier = SYMBOL_QUALIFIER_VOLATILE;
+  if (is_pt_name("const"   , pt[keyword], bnf)) symbol[symbol_empty_id].qualifier = SYMBOL_QUALIFIER_CONST;
+  return pt[type_qualifier].right;
 }/*}}}*/
 static int register_parameter_type_list(/*{{{*/
   const int  kind

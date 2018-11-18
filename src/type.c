@@ -10,7 +10,6 @@
 // 関数プロトタイプ/*{{{*/
 static void initialize_type_table(TYPE* type, const int type_max_size);
 static int register_default_type(const BNF* bnf, TYPE* type);
-static int search_lex_bnf(const BNF* bnf, const char* name);
 static void register_struct_recursive(
   const int pt_top_index
   , const BLOCK* block
@@ -61,7 +60,9 @@ static void initialize_type_table(TYPE* type, const int type_max_size) {/*{{{*/
     type[i].id         = i;
     type[i].total_size = type_max_size;
     type[i].used_size  = 0;
-    type[i].bnf_id     = -1;
+    type[i].sign       = SYMBOL_TYPE_UNUSED;
+    type[i].length     = SYMBOL_TYPE_UNUSED;
+    type[i].body       = SYMBOL_TYPE_UNUSED;
     type[i].token_id   = -1;
     type[i].alias_id   = -1;
     type[i].block      = -1;
@@ -69,78 +70,99 @@ static void initialize_type_table(TYPE* type, const int type_max_size) {/*{{{*/
   }
 }/*}}}*/
 static int register_default_type(const BNF* bnf, TYPE* type) {/*{{{*/
-  int i=0;
 
-  type[i].bnf_id = search_lex_bnf(bnf, "void");
-  type[i].byte  = 0;
-  i++;
+  const int sign_size = 2;
+  const int length_size = 3;
+  const int body_size = 5;
+  const int all_size = sign_size*length_size*body_size;
 
-  type[i].bnf_id = search_lex_bnf(bnf, "char");
-  type[i].byte  = 1;
-  i++;
+  for (int sign=0; sign<sign_size; sign++) {
+    for (int length=0; length<length_size; length++) {
+      for (int body=0; body<body_size; body++) {
 
-  type[i].bnf_id = search_lex_bnf(bnf, "double");
-  type[i].byte  = 8;
-  i++;
+        const int index = sign*length_size*body_size + length*body_size + body;
+        if (sign == SYMBOL_TYPE_SIGNED) {
+          type[index].sign = SYMBOL_TYPE_SIGNED;
+        } else if (sign == SYMBOL_TYPE_UNSIGNED) {
+          type[index].sign = SYMBOL_TYPE_UNSIGNED;
+        } else {
+          assert(0);
+        }
 
-  type[i].bnf_id = search_lex_bnf(bnf, "float");
-  type[i].byte  = 4;
-  i++;
+        int body_factor;
+        if (body == SYMBOL_TYPE_INT) {
+          type[index].body = SYMBOL_TYPE_INT;
+          body_factor = 4;
+        } else if (body == SYMBOL_TYPE_VOID) {
+          type[index].body = SYMBOL_TYPE_VOID;
+          body_factor = 0;
+        } else if (body == SYMBOL_TYPE_CHAR) {
+          type[index].body = SYMBOL_TYPE_CHAR;
+          body_factor = 1;
+        } else if (body == SYMBOL_TYPE_FLOAT) {
+          type[index].body = SYMBOL_TYPE_FLOAT;
+          body_factor = 4;
+        } else if (body == SYMBOL_TYPE_DOUBLE) {
+          type[index].body = SYMBOL_TYPE_DOUBLE;
+          body_factor = 8;
+        } else {
+          assert(0);
+        }
 
-  type[i].bnf_id = search_lex_bnf(bnf, "int");
-  type[i].byte  = 4;
-  i++;
-
-  type[i].bnf_id = search_lex_bnf(bnf, "long");
-  type[i].byte  = 8;
-  i++;
-
-  type[i].bnf_id = search_lex_bnf(bnf, "short");
-  type[i].byte  = 2;
-  i++;
-
-  type[i].bnf_id = search_lex_bnf(bnf, "signed");
-  type[i].byte  = 4;
-  i++;
-
-  type[i].bnf_id = search_lex_bnf(bnf, "unsigned");
-  type[i].byte  = 4;
-  i++;
-
-  for (int j=0; j<i; j++) type[j].block = 0;
-
-  return i;
-}/*}}}*/
-static int search_lex_bnf(const BNF* bnf, const char* name) {/*{{{*/
-  int bnf_id;
-  for (bnf_id=0; bnf_id<bnf[0].total_size; bnf_id++) {
-    if (0==strcmp(bnf[bnf_id].name, name)) break;
+        if (length == SYMBOL_TYPE_MEDIUM) {
+          type[index].length = SYMBOL_TYPE_MEDIUM;
+          type[index].byte = body_factor;
+        } else if (length == SYMBOL_TYPE_LONG) {
+          type[index].length = SYMBOL_TYPE_LONG;
+          type[index].byte = body_factor*2;
+        } else if (length == SYMBOL_TYPE_SHORT) {
+          type[index].length = SYMBOL_TYPE_SHORT;
+          type[index].byte = body_factor/2;
+        } else {
+          assert(0);
+        }
+      }
+    }
   }
-  if (bnf_id == bnf[0].total_size) bnf_id = -1;
-  return bnf_id;
+
+  for (int j=0; j<all_size; j++) type[j].block = 0;
+
+  return all_size;
 }/*}}}*/
 extern void print_type_table(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const TYPE* type) {/*{{{*/
-  int i=0;
-  while (type[i].bnf_id >= 0) {
+  for (int i=0; i<type[i].used_size; i++) {
     fprintf(fp, "%03d", i);
-    fprintf(fp, " |%-15s", bnf[type[i].bnf_id].name);
     fprintf(fp, " | block:%2d", type[i].block);
     fprintf(fp, " | byte:%3d" , type[i].byte);
+    fprintf(fp, " | ");
 
-    if (0==strcmp("typedef", bnf[type[i].bnf_id].name)) {
+    if (type[i].body == SYMBOL_TYPE_TYPEDEF_NAME) {
       assert(type[i].token_id >= 0);
       assert(type[i].alias_id >= 0);
-
-      fprintf(fp, " | ");
-
       print_token_name(fp, token[type[i].token_id]);
       fprintf(fp, " --> ");
       fprintf(fp, "%03d", type[i].alias_id);
+
+    } else if (type[i].body == SYMBOL_TYPE_STRUCT) {
+      fprintf(fp, "struct");
+
+    } else {
+      if (type[i].sign == SYMBOL_TYPE_SIGNED  ) fprintf(fp, "signed  ");
+      if (type[i].sign == SYMBOL_TYPE_UNSIGNED) fprintf(fp, "unsigned");
+      fprintf(fp, " | ");
+      if (type[i].length == SYMBOL_TYPE_MEDIUM) fprintf(fp, "      ");
+      if (type[i].length == SYMBOL_TYPE_SHORT ) fprintf(fp, "short ");
+      if (type[i].length == SYMBOL_TYPE_LONG  ) fprintf(fp, "long  ");
+      fprintf(fp, " | ");
+      if (type[i].body == SYMBOL_TYPE_INT         ) fprintf(fp, "int    ");
+      if (type[i].body == SYMBOL_TYPE_VOID        ) fprintf(fp, "void   ");
+      if (type[i].body == SYMBOL_TYPE_CHAR        ) fprintf(fp, "char   ");
+      if (type[i].body == SYMBOL_TYPE_FLOAT       ) fprintf(fp, "float  ");
+      if (type[i].body == SYMBOL_TYPE_DOUBLE      ) fprintf(fp, "double ");
+      if (type[i].body == SYMBOL_TYPE_STRUCT      ) fprintf(fp, "struct ");
+      if (type[i].body == SYMBOL_TYPE_TYPEDEF_NAME) fprintf(fp, "typedef");
     }
-
     fprintf(fp, "\n");
-
-    i++;
   }
 }/*}}}*/
 static void register_struct_recursive(/*{{{*/
@@ -168,7 +190,9 @@ static void register_struct_recursive(/*{{{*/
     assert(struct_id >= 0);
     assert(is_pt_name("struct", pt[struct_id], bnf));
     const int type_empty_id = search_unused_type_index(type);
-    type[type_empty_id].bnf_id = pt[struct_id].bnf_id;
+    type[type_empty_id].sign = SYMBOL_TYPE_UNUSED;
+    type[type_empty_id].length = SYMBOL_TYPE_UNUSED;
+    type[type_empty_id].body = SYMBOL_TYPE_STRUCT;
     type[type_empty_id].token_id = pt[struct_id].token_begin_index;
     type[type_empty_id].block = block[pt[struct_id].token_begin_index].here;
 
@@ -252,21 +276,17 @@ static void register_specifier_qualifier_list(/*{{{*/
     assert(keyword >= 0);
 
     if (is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
-      assert(member[member_empty_id].type < 0);
-      member[member_empty_id].type = keyword;
+      specifier = register_type_specifier(member_empty_id, specifier, bnf, pt, member);
     }
     if (is_pt_name("TYPE_QUALIFIER", pt[specifier], bnf)) {
-      assert(member[member_empty_id].qualify < 0);
-      member[member_empty_id].qualify = keyword;
+      specifier = register_type_qualifier(member_empty_id, specifier, bnf, pt, member);
     }
-
-    specifier = pt[specifier].right;
   }
 }/*}}}*/
 static int search_unused_type_index(const TYPE* type) {/*{{{*/
   int ret;
   for (ret=0; ret<type[0].total_size; ret++) {
-    if (type[ret].bnf_id == -1) break;
+    if (type[ret].body == SYMBOL_TYPE_UNUSED) break;
   }
   return ret;
 }/*}}}*/
@@ -286,55 +306,60 @@ static void register_typedef_recursive(/*{{{*/
   else if (is_pt_name("typedef", pt[pt_top_index], bnf)) {
 
     const int storage_class_specifier = pt[pt_top_index].up;
-    assert(storage_class_specifier);
+    assert(storage_class_specifier >= 0);
     assert(is_pt_name("STORAGE_CLASS_SPECIFIER", pt[storage_class_specifier], bnf));
 
     const int type_specifier = search_pt_index_right("TYPE_SPECIFIER", storage_class_specifier, pt, bnf);
     assert(type_specifier >= 0);
 
-    const int type_lex_token = pt[type_specifier].down;
-    assert(type_lex_token >= 0);
-
     const int declaration_specifiers = pt[storage_class_specifier].up;
-    assert(declaration_specifiers);
+    assert(declaration_specifiers >= 0);
     assert(is_pt_name("DECLARATION_SPECIFIERS", pt[declaration_specifiers], bnf));
 
     const int declaration = pt[declaration_specifiers].up;
-    assert(declaration);
+    assert(declaration >= 0);
     assert(is_pt_name("DECLARATION", pt[declaration], bnf));
 
     const int init_declarator_list = search_pt_index_right("INIT_DECLARATOR_LIST", declaration_specifiers, pt, bnf);
-    assert(init_declarator_list);
+    assert(init_declarator_list >= 0);
     assert(is_pt_name("INIT_DECLARATOR_LIST", pt[init_declarator_list], bnf));
 
     const int init_declarator = pt[init_declarator_list].down;
-    assert(init_declarator);
+    assert(init_declarator >= 0);
     assert(is_pt_name("INIT_DECLARATOR", pt[init_declarator], bnf));
 
     const int declarator = pt[init_declarator].down;
-    assert(declarator);
+    assert(declarator >= 0);
     assert(is_pt_name("DECLARATOR", pt[declarator], bnf));
 
     const int direct_declarator = pt[declarator].down;
-    assert(direct_declarator);
+    assert(direct_declarator >= 0);
     assert(is_pt_name("DIRECT_DECLARATOR", pt[direct_declarator], bnf));
 
     const int identifier = pt[direct_declarator].down;
-    assert(identifier);
+    assert(identifier >= 0);
     assert(is_pt_name("identifier", pt[identifier], bnf));
 
     // 登録
     const int type_empty_id = search_unused_type_index(type);
-    type[type_empty_id].bnf_id = search_lex_bnf(bnf, "typedef");
+    type[type_empty_id].sign   = SYMBOL_TYPE_UNUSED;
+    type[type_empty_id].length = SYMBOL_TYPE_UNUSED;
+    type[type_empty_id].body   = SYMBOL_TYPE_TYPEDEF_NAME;
     type[type_empty_id].token_id = pt[identifier].token_begin_index;
     type[type_empty_id].block = block[pt[pt_top_index].token_begin_index].here;
 
+    // 参照元の型を解析
+    SYMBOL origin_symbol[1];
+    int origin_array[100];
+    initialize_symbol_table(origin_symbol, sizeof(origin_symbol)/sizeof(SYMBOL), origin_array, sizeof(origin_array)/sizeof(int));
+    register_type_specifier(0, type_specifier, bnf, pt, origin_symbol);
+
     // 参照元を登録
-    int alias_id;
+    int alias_id=0;
     // 参照先が構造体の場合
-    if (is_pt_name("struct", pt[type_lex_token], bnf)) {
+    if (origin_symbol[0].type_body == SYMBOL_TYPE_STRUCT) {
       for (alias_id=0; alias_id<type_empty_id-1; alias_id++) {
-        const int empty_token_id = pt[type_lex_token].token_begin_index;
+        const int empty_token_id = origin_symbol[0].body_token_id;
         const int alias_token_id = type[alias_id].token_id;
 
         if (is_same_word(
@@ -348,12 +373,10 @@ static void register_typedef_recursive(/*{{{*/
     // 参照先が構造体以外(intやchar)の場合
     } else {
       for (alias_id=0; alias_id<type_empty_id-1; alias_id++) {
-        const int empty_bnf_id = pt[type_lex_token].bnf_id;
-        const int alias_bnf_id = type[alias_id].bnf_id;
-
-        if (empty_bnf_id == alias_bnf_id) {
-          break;
-        }
+        if (!(origin_symbol[0].type_sign   == type[alias_id].sign  )) continue;
+        if (!(origin_symbol[0].type_length == type[alias_id].length)) continue;
+        if (!(origin_symbol[0].type_body   == type[alias_id].body  )) continue;
+        break;
       }
     }
     type[type_empty_id].alias_id = alias_id;
@@ -375,8 +398,7 @@ extern int search_type_table_by_declare_token(const int token_index , const BNF*
   for (type_index=0; type_index<used_size; type_index++) {
     if (type[type_index].token_id >= 0) {
       if (type[type_index].token_id == token_index) {
-        const char* bnf_name = bnf[type[type_index].bnf_id].name;
-        if ((0==strcmp("typedef", bnf_name)) || (0==strcmp("struct" , bnf_name))) break;
+        if (type[type_index].body == SYMBOL_TYPE_STRUCT || type[type_index].body == SYMBOL_TYPE_TYPEDEF_NAME) break;
       }
     }
   }

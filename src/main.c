@@ -117,8 +117,8 @@ int main(const int argc, const char** argv) {
   create_symbol_table(block, token, bnf, pt, symbol);
   fprintf(stderr, "L:%03d DONE: create symbol table\n", __LINE__);
 
-  register_type_and_symbol_size(block, token, bnf, pt, type, symbol);
-  fprintf(stderr, "L:%03d DONE: register type and symbol size\n", __LINE__);
+//  register_type_and_symbol_size(block, token, bnf, pt, type, symbol);
+//  fprintf(stderr, "L:%03d DONE: register type and symbol size\n", __LINE__);
 
   if ((fp = fopen("table.txt", "w")) == NULL) assert(0);
   fprintf(fp, "TYPE TABLE\n");
@@ -128,24 +128,24 @@ int main(const int argc, const char** argv) {
   fclose(fp);
   fprintf(stderr, "L:%03d DONE: write table.txt\n", __LINE__);
 
-  translate_pt_to_ast(pt, bnf);
-  fprintf(stderr, "L:%03d DONE: create abstruct tree\n", __LINE__);
-
-  if ((fp = fopen("abstruct_tree.dot", "w")) == NULL) assert(0);
-  origin_parse_tree_to_dot(fp, 0, pt, bnf, token, "12.0", NULL, "#FF0000", "#000000");
-  fclose(fp);
-  fprintf(stderr, "L:%03d DONE: write abstruct_tree.dot\n", __LINE__);
-
-  static char code[100000];
-  generate_code(code, sizeof(code)/sizeof(char), block, token, bnf, pt, symbol);
-  fprintf(stderr, "L:%03d DONE: generate code\n", __LINE__);
-
-  if ((fp = fopen("code.asm", "w")) == NULL) assert(0);
-  fprintf(fp, code);
-  fclose(fp);
-  fprintf(stderr, "L:%03d DONE: write code.asm\n", __LINE__);
-
-  fprintf(stderr, "L:%03d DONE: all\n", __LINE__);
+//  translate_pt_to_ast(pt, bnf);
+//  fprintf(stderr, "L:%03d DONE: create abstruct tree\n", __LINE__);
+//
+//  if ((fp = fopen("abstruct_tree.dot", "w")) == NULL) assert(0);
+//  origin_parse_tree_to_dot(fp, 0, pt, bnf, token, "12.0", NULL, "#FF0000", "#000000");
+//  fclose(fp);
+//  fprintf(stderr, "L:%03d DONE: write abstruct_tree.dot\n", __LINE__);
+//
+//  static char code[100000];
+//  generate_code(code, sizeof(code)/sizeof(char), block, token, bnf, pt, symbol);
+//  fprintf(stderr, "L:%03d DONE: generate code\n", __LINE__);
+//
+//  if ((fp = fopen("code.asm", "w")) == NULL) assert(0);
+//  fprintf(fp, code);
+//  fclose(fp);
+//  fprintf(stderr, "L:%03d DONE: write code.asm\n", __LINE__);
+//
+//  fprintf(stderr, "L:%03d DONE: all\n", __LINE__);
   return 0;
 }
 

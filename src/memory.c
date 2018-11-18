@@ -30,6 +30,14 @@ static int register_struct_size(
   , TYPE* type
   , SYMBOL* symbol
 );
+static void register_type_and_symbol_size(
+  const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , const PARSE_TREE* pt
+  , TYPE* type
+  , SYMBOL* symbol
+);
 /*}}}*/
 extern int sizeof_symbol_array(const int byte, const int* array, const int array_size) {/*{{{*/
   int ret;
@@ -67,7 +75,17 @@ extern int sizeof_symbol_array(const int byte, const int* array, const int array
 
   return ret;
 }/*}}}*/
-extern void register_type_and_symbol_size(/*{{{*/
+extern void format_type_and_symbol_table(/*{{{*/
+  const BLOCK* block
+  , const LEX_TOKEN* token
+  , const BNF* bnf
+  , const PARSE_TREE* pt
+  , TYPE* type
+  , SYMBOL* symbol
+) {
+  register_type_and_symbol_size(block, token, bnf, pt, type, symbol);
+}/*}}}*/
+static void register_type_and_symbol_size(/*{{{*/
   const BLOCK* block
   , const LEX_TOKEN* token
   , const BNF* bnf
@@ -84,13 +102,12 @@ extern void register_type_and_symbol_size(/*{{{*/
 
     if (type_index >= 0)  {
       if (type[type_index].byte >= 0) continue;
-      const char* bnf_name = bnf[type[type_index].bnf_id].name;
 
       // TODO typedef int hoge;のみ対応。typedef int* hoge;や配列には未対応
-      if (strcmp("typedef", bnf_name)==0) {
+      if (type[type_index].body == SYMBOL_TYPE_TYPEDEF_NAME) {
         register_typedef_size(type_index, type);
 
-      } else if (strcmp("struct", bnf_name)==0) {
+      } else if (type[type_index].body == SYMBOL_TYPE_STRUCT) {
         token_index = register_struct_size(token_index, type_index, block, token, bnf, pt, type, symbol);
 
       } else {
@@ -121,39 +138,40 @@ static void register_typedef_size(const int type_index, TYPE* type) {/*{{{*/
   assert(origin_type_index < type[0].used_size);
 }/*}}}*/
 static int register_symbol_size(const int symbol_index, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const TYPE* type, SYMBOL* symbol) {/*{{{*/
-  assert(symbol[symbol_index].type >= 0);
-
-  if (0==strcmp("typedef_name", bnf[pt[symbol[symbol_index].type].bnf_id].name)) {
-    const int symbol_token_id = pt[symbol[symbol_index].type].token_begin_index;
-
-    int origin_type_index=0;
-    while (origin_type_index < type[0].used_size) {
-      const int origin_token_id = type[origin_type_index].token_id;
-      if (is_same_token_str(symbol_token_id, origin_token_id, token)) {
-        const int byte = type[origin_type_index].byte;
-        symbol[symbol_index].original_byte = byte;
-        symbol[symbol_index].byte = sizeof_symbol_array(byte, symbol[symbol_index].array, symbol[symbol_index].array_size);
-        break;
-      }
-      origin_type_index++;
-    }
-    assert(origin_type_index < type[0].used_size);
-
-  } else {
-    int origin_type_index=0;
-    while (origin_type_index < type[0].used_size) {
-      if (pt[symbol[symbol_index].type].bnf_id == type[origin_type_index].bnf_id) {
-        const int byte = type[origin_type_index].byte;
-        symbol[symbol_index].original_byte = byte;
-        symbol[symbol_index].byte = sizeof_symbol_array(byte, symbol[symbol_index].array, symbol[symbol_index].array_size);
-        break;
-      }
-      origin_type_index++;
-    }
-    assert(origin_type_index < type[0].used_size);
-  }
-
-  return symbol[symbol_index].byte;
+//  assert(symbol[symbol_index].type >= 0);
+//
+//  if (0==strcmp("typedef_name", bnf[pt[symbol[symbol_index].type].bnf_id].name)) {
+//    const int symbol_token_id = pt[symbol[symbol_index].type].token_begin_index;
+//
+//    int origin_type_index=0;
+//    while (origin_type_index < type[0].used_size) {
+//      const int origin_token_id = type[origin_type_index].token_id;
+//      if (is_same_token_str(symbol_token_id, origin_token_id, token)) {
+//        const int byte = type[origin_type_index].byte;
+//        symbol[symbol_index].original_byte = byte;
+//        symbol[symbol_index].byte = sizeof_symbol_array(byte, symbol[symbol_index].array, symbol[symbol_index].array_size);
+//        break;
+//      }
+//      origin_type_index++;
+//    }
+//    assert(origin_type_index < type[0].used_size);
+//
+//  } else {
+//    int origin_type_index=0;
+//    while (origin_type_index < type[0].used_size) {
+//      if (pt[symbol[symbol_index].type].bnf_id == type[origin_type_index].bnf_id) {
+//        const int byte = type[origin_type_index].byte;
+//        symbol[symbol_index].original_byte = byte;
+//        symbol[symbol_index].byte = sizeof_symbol_array(byte, symbol[symbol_index].array, symbol[symbol_index].array_size);
+//        break;
+//      }
+//      origin_type_index++;
+//    }
+//    assert(origin_type_index < type[0].used_size);
+//  }
+//
+//  return symbol[symbol_index].byte;
+  return 0;
 }/*}}}*/
 static int register_struct_size(/*{{{*/
   const int token_struct_index

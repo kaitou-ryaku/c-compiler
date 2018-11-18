@@ -15,6 +15,9 @@ void delete_empty_external_declaration(const BNF* bnf, PARSE_TREE* pt);
 void print_symbol_table_all(FILE* fp, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol);
 int search_symbol_table_by_declare_token(const int token_index, const SYMBOL* symbol);
 int search_symbol_table(const int token_index, const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, const PARSE_TREE* pt, const SYMBOL* symbol);
+int register_type_specifier(const int symbol_empty_id, const int type_specifier, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol);
+int register_storage_class_specifier(const int symbol_empty_id, const int storage_class_specifier, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol);
+int register_type_qualifier(const int symbol_empty_id, const int type_qualifier, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol);
 
 static const int SYMBOL_TABLE_UNUSED     = -1;
 static const int SYMBOL_TABLE_VARIABLE   = 0;
@@ -26,6 +29,8 @@ static const int SYMBOL_TABLE_STRUCT_MEMBER = 5;
 
 static const int ARRAY_TYPE_POINTER       = 0;
 static const int ARRAY_TYPE_UNDEFINED     = -2;
+
+static const int SYMBOL_TYPE_UNUSED       = -1;
 
 static const int SYMBOL_TYPE_SIGNED       = 0;
 static const int SYMBOL_TYPE_UNSIGNED     = 1;
@@ -42,6 +47,7 @@ static const int SYMBOL_TYPE_DOUBLE       = 4;
 static const int SYMBOL_TYPE_STRUCT       = 5;
 static const int SYMBOL_TYPE_TYPEDEF_NAME = 6;
 
+static const int SYMBOL_STORAGE_UNUSED    = -1;
 static const int SYMBOL_STORAGE_AUTO      = 0;
 static const int SYMBOL_STORAGE_STATIC    = 1;
 static const int SYMBOL_STORAGE_EXTERN    = 2;

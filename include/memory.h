@@ -5,7 +5,7 @@
 #include "../min-bnf-parser/include/min-bnf-parser.h"
 
 int sizeof_symbol_array(const int byte, const int* array, const int array_size);
-extern void register_type_and_symbol_size(
+extern void format_type_and_symbol_table(
   const BLOCK* block
   , const LEX_TOKEN* token
   , const BNF* bnf

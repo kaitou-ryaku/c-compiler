@@ -7,7 +7,9 @@ typedef struct {
   int id;
   int total_size;
   int used_size;
-  int bnf_id;
+  int sign;
+  int length;
+  int body;
   int token_id; // bnf_idがstructかtypedefの場合のみ使用。LEX_TOKEN配列のindex
   int alias_id; // bnf_idがtypedefの場合のみ使用。TYPE配列のindex
   int block;
@@ -24,6 +26,7 @@ typedef struct {
   int   type_sign;  // signed, unsignedの整数値。詳細はsymbol.h内のconst変数で定義
   int   type_body;  // int, char, typedef_keywordの整数値。詳細はsymbol.h内のconst変数で定義
   int   typedef_id; // typedef_keywordの整数値。詳細はsymbol.h内のconst変数で定義
+  int   body_token_id; // type_bodyのtoken_id
   int   storage; // static, externの整数値。詳細はsymbol.h内のconst変数で定義
   int   qualifier; // const, volatileの整数値。詳細はsymbol.h内のconst変数で定義
   int   block; // ローカル変数なら属する{}, 関数定義の引数なら関数の{}, 関数プロトタイプの引数なら0
