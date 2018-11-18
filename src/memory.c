@@ -38,6 +38,7 @@ static void register_type_and_symbol_size(
   , TYPE* type
   , SYMBOL* symbol
 );
+static void fix_default_storage_class(SYMBOL* symbol);
 /*}}}*/
 extern int sizeof_symbol_array(const int byte, const int* array, const int array_size) {/*{{{*/
   int ret;
@@ -84,6 +85,7 @@ extern void format_type_and_symbol_table(/*{{{*/
   , SYMBOL* symbol
 ) {
   register_type_and_symbol_size(block, token, bnf, pt, type, symbol);
+  fix_default_storage_class(symbol);
 }/*}}}*/
 static void register_type_and_symbol_size(/*{{{*/
   const BLOCK* block
@@ -215,4 +217,56 @@ static int register_struct_size(/*{{{*/
   type[type_index].byte = offset;
 
   return token_index-1;
+}/*}}}*/
+static void fix_default_storage_class(SYMBOL* symbol) {/*{{{*/
+  for (int line=0; line<symbol[0].used_size; line++) {
+    if (symbol[line].storage == SYMBOL_STORAGE_REGISTER) {
+      fprintf(stderr, "Error: storage class register is unsupported\n");
+      assert(0);
+    }
+    const int kind = symbol[line].kind;
+    assert(kind != SYMBOL_TABLE_UNUSED);
+    const int block = symbol[line].block;
+
+    // 変数/*{{{*/
+    if (kind == SYMBOL_TABLE_VARIABLE) {
+      assert(symbol[line].token_id >= 0);
+      // 関数外変数のデフォルト値をstaticに
+      if (block == 0) {
+        if (symbol[line].storage == SYMBOL_STORAGE_AUTO) {
+          symbol[line].storage = SYMBOL_STORAGE_STATIC;
+        }
+      }
+      // 関数内変数のexternをautoに
+      else if (block > 0){
+        if (symbol[line].storage == SYMBOL_STORAGE_EXTERN) {
+          symbol[line].storage = SYMBOL_STORAGE_AUTO;
+        }
+      }
+      else {
+        assert(0);
+      }
+    }/*}}}*/
+    // 関数定義かプロトタイプ宣言 -> デフォルトはextern/*{{{*/
+    if (kind == SYMBOL_TABLE_FUNCTION || kind == SYMBOL_TABLE_PROTOTYPE) {
+      assert(symbol[line].token_id >= 0);
+      if (symbol[line].storage == SYMBOL_STORAGE_AUTO) {
+        symbol[line].storage = SYMBOL_STORAGE_EXTERN;
+      }
+    }/*}}}*/
+    // 関数定義の引数 -> auto以外ダメ/*{{{*/
+    if (kind == SYMBOL_TABLE_F_ARGUMENT   ) {
+      assert(symbol[line].token_id >= 0);
+      assert(symbol[line].storage == SYMBOL_STORAGE_AUTO);
+    }/*}}}*/
+    // プロトタイプ宣言の引数 -> auto以外ダメ/*{{{*/
+    if (kind == SYMBOL_TABLE_P_ARGUMENT   ) {
+      assert(symbol[line].storage == SYMBOL_STORAGE_AUTO);
+    }/*}}}*/
+    // 構造体メンバ -> auto以外ダメ/*{{{*/
+    if (kind == SYMBOL_TABLE_STRUCT_MEMBER) {
+      assert(symbol[line].token_id >= 0);
+      assert(symbol[line].storage == SYMBOL_STORAGE_AUTO);
+    }/*}}}*/
+  }
 }/*}}}*/

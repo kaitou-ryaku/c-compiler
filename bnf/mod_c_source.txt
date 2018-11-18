@@ -1,18 +1,31 @@
-int a;
-char b;
+extern int ga;
+static int gb;
+int gc;
 
 typedef struct {
-  int  x[3];
-  char y;
+  int  sa;
 } HOGE;
 
-typedef int hoge;
-typedef unsigned long char piyo;
+typedef int ta;
 
-int func(void) {
-  const extern unsigned long char t;
-  const static hoge p = 3;
-  piyo q[7] = (char*) &p;
+extern int feb(int pea);
+static int fsa(int psb);
+int fc(int pc);
 
-  HOGE *q = {{1,2,3},'a'};
+extern int efa(int eaa) {
+  extern int ea1;
+  static int sb1;
+  int c1;
+}
+
+static int sfb(int sab) {
+  extern int ea2;
+  static int sb2;
+  int c2;
+}
+
+int fc(int ac) {
+  extern int ea3;
+  static int sb3;
+  int c3;
 }
