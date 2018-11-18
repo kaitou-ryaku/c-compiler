@@ -36,7 +36,7 @@ typedef struct {
   int   total_array_size;
   int   byte;         // char:1 char[3]:3 int:4
   int   original_byte;// char:1 char[3]:1 int:4
-  int   function_id;  // 引数の場合、親関数のidを入れる
+  int   function_id;  // 変数の場合、親関数のidを入れる
   int   argument_id;  // 引数の場合、何番目の引数か入れる
   int   total_argument; // 関数の場合、引数の個数を入れる
 } SYMBOL;

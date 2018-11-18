@@ -109,6 +109,13 @@ static int search_identifier_recursive(
   , const BNF* bnf
   , PARSE_TREE* pt
 );
+static int register_variable_function_id(
+  const int symbol_empty_id
+  , const int declaration
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+);
 /*}}}*/
 extern void create_symbol_table(const BLOCK* block, const LEX_TOKEN* token, const BNF* bnf, PARSE_TREE* pt, SYMBOL* symbol) {/*{{{*/
   // memberテーブルは初期化済みとする
@@ -283,6 +290,8 @@ static int create_symbol_variable_recursive(/*{{{*/
     // 関数定義ブロック内の変数宣言
     if (is_pt_name("COMPOUND_STATEMENT", pt[up], bnf)) {
       new_symbol_empty_id = register_declaration(SYMBOL_TABLE_VARIABLE, symbol_empty_id, declaration, block[pt[up].token_begin_index].here, token, bnf, pt, symbol);
+      assert(new_symbol_empty_id >= 0);
+      register_variable_function_id(symbol_empty_id, declaration, bnf, pt, symbol);
       delete_declaration(declaration, bnf, pt);
     }
 
@@ -569,6 +578,7 @@ extern void print_symbol_table_line(FILE* fp, const int line, const LEX_TOKEN* t
   fprintf(fp, "address:%3d ", symbol[line].address);
   fprintf(fp, "byte:%3d ", symbol[line].byte);
   fprintf(fp, "original_byte:%3d ", symbol[line].original_byte);
+  fprintf(fp, "function_id:%3d ", symbol[line].function_id);
 }/*}}}*/
 static int register_parameter_declaration(/*{{{*/
   const   int argument_id
@@ -986,4 +996,28 @@ extern int search_symbol_table(/*{{{*/
   assert(symbol_index < used_size);
 
   return symbol_index;
+}/*}}}*/
+static int register_variable_function_id(/*{{{*/
+  const int symbol_empty_id
+  , const int declaration
+  , const BNF* bnf
+  , PARSE_TREE* pt
+  , SYMBOL* symbol
+) {
+  int up = declaration;
+  while (up >= 0) {
+    if (is_pt_name("FUNCTION_DEFINITION", pt[up], bnf)) {
+      break;
+    }
+    up = pt[up].up;
+  }
+
+  assert(up >= 0);
+  const int identifier = pt[up].down;
+  assert(is_pt_name("identifier", pt[identifier], bnf));
+
+  symbol[0].used_size = symbol_empty_id; // これがないとテーブルを検索できない
+  const int function_id = search_symbol_table_by_declare_token(pt[identifier].token_begin_index, symbol);
+  symbol[symbol_empty_id].function_id = function_id;
+  return symbol_empty_id+1;
 }/*}}}*/
