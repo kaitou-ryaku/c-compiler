@@ -8,8 +8,8 @@ typedef struct {
 
 typedef int ta;
 
-extern int feb(int pea);
-static int fsa(int psb);
+extern int feb(int);
+static int fsa(int);
 int fc(int pc);
 
 extern int efa(int eaa) {

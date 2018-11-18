@@ -262,6 +262,7 @@ static void fix_default_storage_class(SYMBOL* symbol) {/*{{{*/
     // プロトタイプ宣言の引数 -> auto以外ダメ/*{{{*/
     if (kind == SYMBOL_TABLE_P_ARGUMENT   ) {
       assert(symbol[line].storage == SYMBOL_STORAGE_AUTO);
+      symbol[line].token_id = -1;
     }/*}}}*/
     // 構造体メンバ -> auto以外ダメ/*{{{*/
     if (kind == SYMBOL_TABLE_STRUCT_MEMBER) {
