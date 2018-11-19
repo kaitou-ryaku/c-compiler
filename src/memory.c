@@ -260,7 +260,7 @@ static void fix_default_storage_class(SYMBOL* symbol) {/*{{{*/
     }/*}}}*/
     // 関数定義の引数 -> auto以外ダメ/*{{{*/
     if (kind == SYMBOL_TABLE_F_ARGUMENT   ) {
-      assert(symbol[line].token_id >= 0);
+      // assert(symbol[line].token_id >= 0); // voidの場合は-1になる
       assert(symbol[line].storage == SYMBOL_STORAGE_AUTO);
     }/*}}}*/
     // プロトタイプ宣言の引数 -> auto以外ダメ/*{{{*/
