@@ -186,48 +186,50 @@ static bool two_operatir_to_binary_tree_recursive(const int top, PARSE_TREE* pt,
     || is_pt_name("CAST_EXPRESSION"            , pt[top], bnf)
     || is_pt_name("ASSIGNMENT_EXPRESSION"      , pt[top], bnf)
   ) {
-    if ( (pt[top].down >= 0)
-      && (pt[pt[top].down].right >= 0)
-      && (pt[pt[pt[top].down].right].right >= 0)
-    ) {
-      is_change = true;
-      const int fst = pt[top].down;
-      const int ope = pt[fst].right;
-      const int snd = pt[ope].right;
 
-      assert(is_lex(bnf[pt[ope].bnf_id]));
 
-      pt[top].down = ope;
-      pt[ope].up   = top;
-      pt[ope].left  = pt[fst].left; assert(pt[ope].left < 0);
-      pt[ope].right = pt[snd].right;
-      pt[ope].down  = fst;
+    if (pt[top].down < 0) {
+      is_change = delete_lift_solitary_pt(top, pt);
 
-      pt[fst].left  = -1;
-      pt[fst].right = snd;
-      pt[fst].up    = ope;
+    } else {
+      const int down = pt[top].down;
+      const int right = pt[down].right;
 
-      pt[snd].left  = fst;
-      pt[snd].right = -1;
-      pt[snd].up    = ope;
+      if (right >= 0 && pt[right].right >= 0) {
+        assert(pt[pt[right].right].right < 0);
 
-      two_operatir_to_binary_tree_recursive(fst, pt, bnf);
-      two_operatir_to_binary_tree_recursive(snd, pt, bnf);
-    }
+        is_change = true;
+        const int fst = pt[top].down;
+        const int ope = pt[fst].right;
+        const int snd = pt[ope].right;
 
-    else if (pt[top].down >= 0) {
-      if (pt[pt[top].down].right < 0) {
+        assert(is_lex(bnf[pt[ope].bnf_id]));
+
+        pt[top].down = ope;
+        pt[ope].up   = top;
+        pt[ope].left  = pt[fst].left; assert(pt[ope].left < 0);
+        pt[ope].right = pt[snd].right;
+        pt[ope].down  = fst;
+
+        pt[fst].left  = -1;
+        pt[fst].right = snd;
+        pt[fst].up    = ope;
+
+        pt[snd].left  = fst;
+        pt[snd].right = -1;
+        pt[snd].up    = ope;
+
+        two_operatir_to_binary_tree_recursive(fst, pt, bnf);
+        two_operatir_to_binary_tree_recursive(snd, pt, bnf);
+
+      } else if (right >= 0) {
+        assert(pt[right].right < 0);
         assert(is_pt_name("CAST_EXPRESSION", pt[top], bnf));
+
       } else {
         is_change = delete_lift_solitary_pt(top, pt);
         two_operatir_to_binary_tree_recursive(pt[top].down, pt, bnf);
       }
-    }
-
-    else if (pt[top].down < 0) {
-      is_change = delete_lift_solitary_pt(top, pt);
-    } else {
-      assert(0);
     }
   }
 
