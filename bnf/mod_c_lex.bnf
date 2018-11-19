@@ -1,8 +1,8 @@
 typedef_name         : __TO_DO_WORK_0__
-character_constant   : '(@|\\)(\l|\u|\d| |!|\@|#|$|%|^|&|\*|-|=|`|_|+|\||~|[|]|{|}|;|'|:|,|.|/|<|>|?)'
+character_constant   : '(@|\\)(\l|\u|\d| |!|\@|#|$|%|^|&|\*|-|=|`|_|+|\||~|[|]|{|}|;|'|:|,|\.|/|<|>|?)'
 enumeration_constant : __TO_DO_WORK_2__
 string               : "(\l|\u|_|\d| |%)*"
-skip                 : \s\s*
+skip                 : (\s\s*|//(\l|\u|\d| |!|\@|#|$|%|^|&|\*|-|=|`|_|+|\||~|[|]|{|}|;|'|:|,|\.|/|<|>|?)*\s)
 floating_constant    : (0|(1|2|3|4|5|6|7|8|9)\d*)\.\d*
 integer_constant     : (0|(1|2|3|4|5|6|7|8|9)\d*)
 auto                 : auto
