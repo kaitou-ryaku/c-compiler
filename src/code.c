@@ -294,7 +294,7 @@ static char* generate_code_identifier(/*{{{*/
 
   return code;
 }/*}}}*/
-static char* write_identifier(
+static char* write_identifier(/*{{{*/
   const int           identifier
   , char*             code
   , int*              code_rest_size
@@ -337,7 +337,7 @@ static char* write_identifier(
   }
 
   return code;
-}
+}/*}}}*/
 static char* generate_code_binary_operator(/*{{{*/
   const int           binary_operator
   , char*             code
