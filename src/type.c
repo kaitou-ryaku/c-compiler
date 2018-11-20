@@ -277,9 +277,10 @@ static void register_specifier_qualifier_list(/*{{{*/
 
     if (is_pt_name("TYPE_SPECIFIER", pt[specifier], bnf)) {
       specifier = register_type_specifier(member_empty_id, specifier, bnf, pt, member);
-    }
-    if (is_pt_name("TYPE_QUALIFIER", pt[specifier], bnf)) {
+    } else if (is_pt_name("TYPE_QUALIFIER", pt[specifier], bnf)) {
       specifier = register_type_qualifier(member_empty_id, specifier, bnf, pt, member);
+    } else {
+      assert(0);
     }
   }
 }/*}}}*/
