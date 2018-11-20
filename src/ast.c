@@ -196,7 +196,7 @@ static bool two_operatir_to_binary_tree_recursive(const int top, PARSE_TREE* pt,
       const int right = pt[down].right;
 
       if (right >= 0 && pt[right].right >= 0) {
-        assert(pt[pt[right].right].right < 0);
+        // a + b + c + d を +(a,b) + c + d に変更
 
         is_change = true;
         const int fst = pt[top].down;
@@ -221,6 +221,7 @@ static bool two_operatir_to_binary_tree_recursive(const int top, PARSE_TREE* pt,
 
         two_operatir_to_binary_tree_recursive(fst, pt, bnf);
         two_operatir_to_binary_tree_recursive(snd, pt, bnf);
+        if (pt[ope].right >= 0) two_operatir_to_binary_tree_recursive(pt[ope].right, pt, bnf);
 
       } else if (right >= 0) {
         assert(pt[right].right < 0);
