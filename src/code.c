@@ -246,6 +246,7 @@ static char* generate_code_expression(/*{{{*/
   if      (is_pt_name("integer_constant", pt[expression], bnf)) code = generate_code_constant(expression, code, code_rest_size, token, bnf, pt);
   else if (is_pt_name("identifier"      , pt[expression], bnf)) code = generate_code_identifier(expression, code, code_rest_size, block, token, bnf, pt, symbol);
   else if (is_pt_name("plus"            , pt[expression], bnf)) code = generate_code_binary_operator(expression, code, code_rest_size, block, token, bnf, pt, symbol);
+  else if (is_pt_name("equal_equal"     , pt[expression], bnf)) code = generate_code_binary_operator(expression, code, code_rest_size, block, token, bnf, pt, symbol);
   else if (is_pt_name("equal"           , pt[expression], bnf)) code = generate_code_assign(expression, code, code_rest_size, block, token, bnf, pt, symbol);
 
   return code;
@@ -349,7 +350,6 @@ static char* generate_code_binary_operator(/*{{{*/
   , const SYMBOL*     symbol
 ) {
   // TODO 色々足りなすぎる
-  assert(is_pt_name("plus"  , pt[binary_operator], bnf));
   int length;
 
   const int left = pt[binary_operator].down;
@@ -366,20 +366,46 @@ static char* generate_code_binary_operator(/*{{{*/
 
   if (is_pt_name("plus", pt[binary_operator], bnf)) {
     length = snprintf(code, *code_rest_size, "add  eax, edx\n");
+    // "+"  "add "
+    // "-"  "sub "
+    // "*"  "imul"
+    // "/"  "idiv"
+    // "%"  "imod"
     *code_rest_size -= length;
     code = &(code[length]);
   }
 
-  //if      (0 == strcmp(str, "+" )) fprintf(fp, "add  eax, edx\n");
+  else if (is_pt_name("equal_equal", pt[binary_operator], bnf)) {
+    const char* opecode = "je";
+    char label[100];
+    snprintf(label, sizeof(label)/sizeof(char), "_LABEL_%03d_%s", pt[binary_operator].token_begin_index, opecode);
 
-  //char *str = s.token[ope -> init].str;
-  //if      (0 == strcmp(str, "+" )) fprintf(fp, "add  eax, edx\n");
-  //else if (0 == strcmp(str, "-" )) fprintf(fp, "sub  eax, edx\n");
-  //else if (0 == strcmp(str, "*" )) fprintf(fp, "imul eax, edx\n");
-  //else if (0 == strcmp(str, "/" )) fprintf(fp, "idiv eax, edx\n");
-  //else if (0 == strcmp(str, "%" )) fprintf(fp, "imod eax, edx\n");
-  //else asm_compare(fp, str, label, ope -> init, "eax", "edx");
-  //fprintf(fp, "push eax\n");
+    length = snprintf(code, *code_rest_size, "cmp eax, edx\n");
+    *code_rest_size -= length;
+    code = &(code[length]);
+
+    length = snprintf(code, *code_rest_size, "%s %s_true\n", opecode, label);
+    // "=="   "je  "
+    // "!="   "jne "
+    // "<"    "jl  "
+    // "<="   "jle "
+    // ">"    "jg  "
+    // ">="   "jge "
+    *code_rest_size -= length;
+    code = &(code[length]);
+
+    length = snprintf(code, *code_rest_size, "mov eax, 0x0\njmp %s_end\n", label);
+    *code_rest_size -= length;
+    code = &(code[length]);
+
+    length = snprintf(code, *code_rest_size, "mov eax, 0\njmp %s_end\n", label);
+    *code_rest_size -= length;
+    code = &(code[length]);
+
+    length = snprintf(code, *code_rest_size, "%s_true:\nmov eax, 1\nLABEL_END:\n", label);
+    *code_rest_size -= length;
+    code = &(code[length]);
+  }
 
   return code;
 }/*}}}*/
