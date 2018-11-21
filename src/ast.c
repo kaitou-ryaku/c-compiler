@@ -16,9 +16,12 @@ static bool two_operatir_to_binary_tree_recursive(const int top, PARSE_TREE* pt,
 static void two_operatir_to_binary_tree(PARSE_TREE* pt, const BNF* bnf);
 static bool postfix_to_binary_tree_recursive(const int top, PARSE_TREE* pt, const BNF* bnf);
 static void postfix_to_binary_tree(PARSE_TREE* pt, const BNF* bnf);
+static bool format_no_argument_function_recursive(const int top, PARSE_TREE* pt, const BNF* bnf);
+static void format_no_argument_function(PARSE_TREE* pt, const BNF* bnf);
 /*}}}*/
 
 extern void translate_pt_to_ast(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
+  format_no_argument_function(pt, bnf);
   delete_syntax_symbol(pt, bnf);
   delete_solitary_container(pt, bnf);
   two_operatir_to_binary_tree(pt, bnf);
@@ -330,4 +333,40 @@ static bool postfix_to_binary_tree_recursive(const int top, PARSE_TREE* pt, cons
 static void postfix_to_binary_tree(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
   bool is_change = true;
   while (is_change) is_change = postfix_to_binary_tree_recursive(0, pt, bnf);
+}/*}}}*/
+static bool format_no_argument_function_recursive(const int top, PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
+  // 引数の無いfunc()の関数呼び出しが、括弧削除で変数呼び出しと同じ形になるのを防ぐ
+  bool is_change = false;
+
+  if (is_pt_name("lparen", pt[top], bnf)) {
+    const int up    = pt[top].up;
+    const int right = pt[top].right;
+    assert(up >= 0);
+    assert(right >= 0);
+
+    if (is_pt_name("POSTFIX_EXPRESSION", pt[up], bnf) && is_pt_name("rparen", pt[right], bnf)) {
+      int bnf_id = 0;
+      while (bnf_id >= 0) {
+
+        bnf_id = search_bnf_next_syntax(bnf_id, bnf);
+        if (0==strcmp(bnf[bnf_id].name, "ARGUMENT_EXPRESSION_LIST")) {
+          is_change = true;
+
+          pt[top].bnf_id = bnf_id;
+          pt[top].token_end_index = pt[top].token_begin_index;
+          break;
+        }
+      }
+      assert(is_change);
+      if (right >= 0) format_no_argument_function_recursive(right, pt, bnf);
+    }
+  }
+
+  if (!is_change && (pt[top].down  >= 0)) is_change = format_no_argument_function_recursive(pt[top].down, pt, bnf);
+  if (!is_change && (pt[top].right >= 0)) is_change = format_no_argument_function_recursive(pt[top].right, pt, bnf);
+  return is_change;
+}/*}}}*/
+static void format_no_argument_function(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
+  bool is_change = true;
+  while (is_change) is_change = format_no_argument_function_recursive(0, pt, bnf);
 }/*}}}*/
