@@ -26,6 +26,7 @@ extern void translate_pt_to_ast(PARSE_TREE* pt, const BNF* bnf) {/*{{{*/
   delete_solitary_container(pt, bnf);
   two_operatir_to_binary_tree(pt, bnf);
   postfix_to_binary_tree(pt, bnf);
+  delete_solitary_container(pt, bnf);
 }/*}}}*/
 static bool delete_lift_solitary_pt(const int index, PARSE_TREE* pt) {/*{{{*/
   // 削除したらtrue, 削除しなかったらfalseを返す
